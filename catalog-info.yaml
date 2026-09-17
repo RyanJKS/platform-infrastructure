@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: "platform-infrastructure"
+  title: "Platform Infrastructure"
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+  description: "Main repository to hold multi cloud infrastructure provisioned using terraform and terragrunt."
+spec:
+  type: service
+  lifecycle: experimental
+  owner: "user:default/ryanjks"
