@@ -2,6 +2,8 @@ site_name: "Platform Infrastructure"
 site_description: "Main repository to hold multi cloud infrastructure provisioned using terraform and terragrunt."
 nav:
   - Home: index.md
+  - Deployments: terragrunt.md
+  - Azure pipelines: azure-pipelines.md
   - Architecture: architecture.md
 plugins:
   - techdocs-core
