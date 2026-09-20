@@ -1,0 +1,196 @@
+name: Azure unit execution
+on:
+  workflow_call:
+    inputs:
+      operation:
+        type: string
+        required: true
+      subscription:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      region:
+        type: string
+        required: true
+      scope:
+        type: string
+        required: true
+      category:
+        type: string
+        required: true
+      application:
+        type: string
+        required: false
+      unit:
+        type: string
+        required: true
+      action:
+        type: string
+        required: true
+      confirmation:
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+  id-token: write
+
+# Shared across provisioning and deprovisioning, including approval waits.
+concurrency:
+  group: azure-${{ inputs.subscription }}-${{ inputs.environment }}-${{ inputs.region }}-${{ inputs.scope }}-${{ inputs.category }}-${{ inputs.application }}-${{ inputs.unit }}
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TG_NON_INTERACTIVE: "true"
+  TG_TF_PATH: terraform
+  TG_NO_AUTO_INIT: "true"
+  TG_BACKEND_REQUIRE_BOOTSTRAP: "true"
+  ARM_USE_OIDC: "true"
+  ARM_USE_AZUREAD: "true"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      deployments: read
+    outputs:
+      directory: ${{ steps.target.outputs.directory }}
+      state_key: ${{ steps.target.outputs.state_key }}
+      plan_environment: ${{ steps.target.outputs.plan_environment }}
+      apply_environment: ${{ steps.target.outputs.apply_environment }}
+      terraform_version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Require the default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/$DEFAULT_BRANCH" ]] || { echo "Run Azure workflows from the default branch"; exit 1; }
+      - name: Validate selected unit
+        id: target
+        env:
+          TARGET_OPERATION: ${{ inputs.operation }}
+          TARGET_SUBSCRIPTION: ${{ inputs.subscription }}
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          TARGET_REGION: ${{ inputs.region }}
+          TARGET_SCOPE: ${{ inputs.scope }}
+          TARGET_CATEGORY: ${{ inputs.category }}
+          TARGET_APPLICATION: ${{ inputs.application }}
+          TARGET_UNIT: ${{ inputs.unit }}
+          TARGET_ACTION: ${{ inputs.action }}
+          TARGET_CONFIRMATION: ${{ inputs.confirmation }}
+        run: python3 .github/scripts/azure_unit.py target
+      - name: Verify configured GitHub environments and apply approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLAN_ENVIRONMENT: ${{ steps.target.outputs.plan_environment }}
+          APPLY_ENVIRONMENT: ${{ steps.target.outputs.apply_environment }}
+          REQUESTED_ACTION: ${{ inputs.action }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/environments/$PLAN_ENVIRONMENT" > "$RUNNER_TEMP/plan-environment.json"
+          if [[ "$REQUESTED_ACTION" == apply ]]; then
+            gh api "repos/$GITHUB_REPOSITORY/environments/$APPLY_ENVIRONMENT" > "$RUNNER_TEMP/apply-environment.json"
+            python3 .github/scripts/azure_unit.py approval "$RUNNER_TEMP/apply-environment.json"
+          fi
+      - name: Validate repository Terraform version
+        id: version
+        env:
+          VERSION: ${{ vars.TERRAFORM_VERSION }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Set repository variable TERRAFORM_VERSION to an exact version"; exit 1; }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  plan:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ needs.validate.outputs.plan_environment }}
+    env:
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      EXPECTED_STATE_KEY: ${{ needs.validate.outputs.state_key }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/azure-terragrunt
+        with:
+          terraform-version: ${{ needs.validate.outputs.terraform_version }}
+      - name: Initialize existing backend and verify state isolation
+        working-directory: ${{ needs.validate.outputs.directory }}
+        run: |
+          set -euo pipefail
+          terragrunt run -- init -input=false -lockfile=readonly
+          terragrunt exec --in-download-dir -- python3 "$GITHUB_WORKSPACE/.github/scripts/azure_unit.py" backend
+      - name: Create saved plan
+        working-directory: ${{ needs.validate.outputs.directory }}
+        env:
+          OPERATION: ${{ inputs.operation }}
+          TARGET_DIRECTORY: ${{ needs.validate.outputs.directory }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/azure-plan"
+          args=()
+          if [[ "$OPERATION" == deprovision ]]; then args+=(-destroy); fi
+          terragrunt run -- plan -input=false -lock-timeout=5m "${args[@]}" -out="$RUNNER_TEMP/azure-plan/unit.tfplan"
+          {
+            echo "### Azure $OPERATION plan"
+            echo "Target: $TARGET_DIRECTORY"
+            echo "Commit: $GITHUB_SHA"
+            echo "Review the plan step logs before approving apply."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: azure-unit-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/azure-plan/unit.tfplan
+          if-no-files-found: error
+          retention-days: 1
+
+  apply:
+    needs: [validate, plan]
+    if: inputs.action == 'apply'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ needs.validate.outputs.apply_environment }}
+    env:
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      EXPECTED_STATE_KEY: ${{ needs.validate.outputs.state_key }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/azure-terragrunt
+        with:
+          terraform-version: ${{ needs.validate.outputs.terraform_version }}
+      - name: Initialize existing backend and verify state isolation
+        working-directory: ${{ needs.validate.outputs.directory }}
+        run: |
+          set -euo pipefail
+          terragrunt run -- init -input=false -lockfile=readonly
+          terragrunt exec --in-download-dir -- python3 "$GITHUB_WORKSPACE/.github/scripts/azure_unit.py" backend
+      - uses: actions/download-artifact@v4
+        with:
+          name: azure-unit-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/azure-plan
+      - name: Apply the saved plan
+        working-directory: ${{ needs.validate.outputs.directory }}
+        run: |
+          set -euo pipefail
+          terragrunt run -- apply -input=false -lock-timeout=5m "$RUNNER_TEMP/azure-plan/unit.tfplan"

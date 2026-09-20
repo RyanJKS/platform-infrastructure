@@ -1,0 +1,40 @@
+name: Azure Terragrunt tools and login
+description: Install pinned tools and authenticate with Azure OIDC
+inputs:
+  terraform-version:
+    required: true
+    description: Exact Terraform version
+runs:
+  using: composite
+  steps:
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+        terraform_wrapper: false
+    - name: Install pinned Terragrunt
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="$(cat .terragrunt-version)"
+        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+        release="https://github.com/gruntwork-io/terragrunt/releases/download/v${version}"
+        tools_dir="$RUNNER_TEMP/azure-tools"
+        mkdir -p "$tools_dir"
+        curl -fsSL "$release/terragrunt_linux_amd64" -o "$tools_dir/terragrunt_linux_amd64"
+        curl -fsSL "$release/SHA256SUMS" -o "$tools_dir/SHA256SUMS"
+        cd "$tools_dir"
+        grep ' terragrunt_linux_amd64$' SHA256SUMS | sha256sum --check --strict
+        install -m 0755 terragrunt_linux_amd64 terragrunt
+        echo "$tools_dir" >> "$GITHUB_PATH"
+    - name: Check Azure identity settings
+      shell: bash
+      run: |
+        set -euo pipefail
+        : "${ARM_CLIENT_ID:?Set AZURE_CLIENT_ID on the GitHub environment}"
+        : "${ARM_TENANT_ID:?Set AZURE_TENANT_ID on the GitHub environment}"
+        : "${ARM_SUBSCRIPTION_ID:?Set AZURE_SUBSCRIPTION_ID on the GitHub environment}"
+    - uses: azure/login@v2
+      with:
+        client-id: ${{ env.ARM_CLIENT_ID }}
+        tenant-id: ${{ env.ARM_TENANT_ID }}
+        subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
