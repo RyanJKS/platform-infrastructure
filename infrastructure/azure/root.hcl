@@ -53,6 +53,8 @@ generate "providers_definition" {
 
     resource_provider_registrations = "none"
   }
+
+  provider "azuread" {}
 EOF
 }
 
