@@ -6,7 +6,17 @@ terraform {
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
+  expose = true
 }
+
+dependency "resource_group" {
+  config_path = "../resource_group"
+  mock_outputs = {
+    name = "mock-resource_group-output"
+    location = "mock-location-output"
+  }
+}
+
 
 inputs = {
   # --------------------------------------------------------------------------------------------------------------------
@@ -15,19 +25,21 @@ inputs = {
 
   # Description: The resource name.
   # Type: string
-  name = "lower(\"${include.root.locals.spoke_prefix}${include.root.locals.region_short}{include.root.locals.environment}vnet\")"
+  name = lower("${include.root.locals.spoke_prefix}${include.root.locals.region_short}${include.root.locals.environment}vnet")
 
   # Description: The name of the existing resource group.
   # Type: string
-  resource_group_name = "ha"
+  resource_group_name = dependency.resource_group.outputs.name
 
   # Description: The Azure region in which to create the resource.
   # Type: string
-  location = "ha"
+  location = dependency.resource_group.outputs.location
 
   # Description: The address ranges for the virtual network.
   # Type: list
-  address_space = []
+  address_space = [
+    "10.0.0.0/16"
+  ]
 
 
   # --------------------------------------------------------------------------------------------------------------------
@@ -42,9 +54,30 @@ inputs = {
   # Description: Custom DNS servers. An empty list uses Azure DNS.
   # Type: list
   # dns_servers = []
+  subnets = {
+    aksnet-001 = {
+      address_prefixes = ["10.0.1.0/24"]
+    }
+    aksnet-002 = {
+      address_prefixes = ["10.0.2.0/24"]
+    }
 
-  # Description: Subnets keyed by subnet name.
-  # Type: map
-  # subnets = {}
 
+    appsnet-001 = {
+      address_prefixes  = ["10.0.6.0/24"]
+      service_endpoints = ["Microsoft.Storage"]
+
+      delegation = {
+        name = "app-service-delegation"
+
+        service_delegation = {
+          name = "Microsoft.Web/serverFarms"
+
+          actions = [
+            "Microsoft.Network/virtualNetworks/subnets/action"
+          ]
+        }
+      }
+    }
+  }
 }

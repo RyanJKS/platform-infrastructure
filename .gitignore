@@ -67,3 +67,5 @@ site/
 
 # Local Serena project configuration and caches
 .serena/
+
+.terraform.lock.hcl
