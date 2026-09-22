@@ -6,6 +6,8 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Changed
 
+- Configure Azure catalog discovery for local modules, with readable catalog
+  metadata and filtering that excludes deployment units.
 - Configure the Azure development AKS unit with one `Standard_D4as_v5` node,
   autoscaling disabled, and the Free management tier.
 - Reserve separate Azure hub placeholders under `DEV-HUB/dev/eus2` and

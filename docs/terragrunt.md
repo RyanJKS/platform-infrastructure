@@ -177,7 +177,41 @@ copy the unit files beside `unit.hcl`.
 
 ## Catalog publication and versioning
 
-Each cloud root selects its matching catalog. `infrastructure/aws/root.hcl` contains:
+The Azure root uses this checkout's local modules as its catalog:
+
+```hcl
+catalog {
+  urls = [get_repo_root()]
+}
+```
+
+Terragrunt v1.1.5 requires a local catalog path to identify a Git repository,
+not a module directory. A bare `modules` is also not an HCL string. Pointing at
+`get_repo_root()` works from nested unit directories; `.terragrunt-catalog-ignore`
+limits discovery to `infrastructure/azure/modules/`. Both `base_aad_groups` and
+`lookup` provide README frontmatter for their catalog titles and descriptions.
+The ignore file affects catalog discovery, not Terraform execution or Git tracking.
+
+From a target unit directory beneath `infrastructure/azure`, open the catalog:
+
+```sh
+terragrunt catalog --root-file-name root.hcl
+```
+
+To check discovery without the interactive interface, run from
+`infrastructure/azure/modules/base_aad_groups`:
+
+```sh
+terragrunt catalog --root-file-name root.hcl --format jsonl --experiment catalog-format
+```
+
+This should list the two local modules. These entries use the working checkout,
+so local edits are visible without publishing or committing them. Review generated
+`terraform.source` paths before committing a scaffolded unit; absolute checkout
+paths are machine-specific. The remote Azure catalog is currently commented out.
+To include it again, uncomment its URL alongside `get_repo_root()`.
+
+The AWS root still selects its remote catalog:
 
 ```hcl
 catalog {
@@ -187,10 +221,10 @@ catalog {
 }
 ```
 
-`infrastructure/azure/root.hcl` uses
-`github.com/RyanJKS/platform-blueprints//terraform/azure` instead.
+The optional Azure remote catalog uses
+`github.com/RyanJKS/platform-blueprints//terraform/azure`.
 
-Catalog discovery requires the corresponding cloud directory to be published.
+Remote catalog discovery requires the corresponding cloud directory to be published.
 Before pinning a catalog, inspect its README and template contents at the
 published revision. Verify that a full commit exists remotely and contains
 `terraform/aws/` or `terraform/azure/`, then append

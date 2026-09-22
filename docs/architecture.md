@@ -12,8 +12,9 @@ cloud-specific provider and backend configuration, and operational documentation
 It also contains repository-local Azure modules. The
 [base Entra groups module](azure-groups.md) creates the platform's named security
 groups and their nested memberships; permission assignments remain separate.
-The initial catalog entry is a generic Terragrunt unit template, not a cloud
-module. Catalog discovery requires publication of that entry.
+The Azure catalog uses the local Git checkout and limits discovery to
+`infrastructure/azure/modules/` through `.terragrunt-catalog-ignore`. The AWS catalog
+uses `platform-blueprints`; remote entries require publication before discovery.
 
 ## Deployment boundaries
 

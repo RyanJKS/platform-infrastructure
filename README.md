@@ -40,9 +40,9 @@ the full example tree. Review identity settings before deployment.
 
 Install **Terragrunt v1.1.5** (recorded in `.terragrunt-version`) and follow the
 [deployment guide](docs/terragrunt.md) to select a real module, configure cloud
-identity and an existing remote backend, and scaffold a unit. Both cloud roots
-already reference the upcoming `platform-blueprints` catalog; remote discovery
-requires that catalog to be published first.
+identity and an existing remote backend, and scaffold a unit. The Azure catalog
+discovers this checkout's local modules. The AWS root references the remote
+`platform-blueprints` catalog, which must be published before discovery.
 
 From a unit directory beneath the appropriate cloud root, with its settings
 files prepared and no `terragrunt.hcl` yet:
@@ -51,8 +51,8 @@ files prepared and no `terragrunt.hcl` yet:
 terragrunt catalog --root-file-name root.hcl
 ```
 
-The initial entry is a generic unit template, not an AWS or Azure module. Pin the
-selected module independently from the catalog. Do not plan until authentication,
+Azure offers the local base Entra groups and identity lookup modules. Pin remote
+modules independently from the catalog. Do not plan until authentication,
 provider configuration, inputs, and isolated remote state have been reviewed.
 
 ## Azure pipelines

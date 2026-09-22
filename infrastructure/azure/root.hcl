@@ -10,10 +10,10 @@ locals {
 
   # Re-usable
   subscription_id = local.subscription_config.locals.subscription_id
-  environment = local.environment_config.locals.environment
-  region_short = local.region_config.locals.region_short
-  region_long = local.region_config.locals.region_long
-  spoke_prefix = local.spoke_config.locals.spoke_prefix
+  environment     = local.environment_config.locals.environment
+  region_short    = local.region_config.locals.region_short
+  region_long     = local.region_config.locals.region_long
+  spoke_prefix    = local.spoke_config.locals.spoke_prefix
   # solution_name = local.solution_config.locals.solution
 
   # Pre-provisioned
@@ -23,6 +23,8 @@ locals {
 catalog {
   urls = [
     "github.com/RyanJKS/platform-blueprints//terraform/azure",
+    # Local catalogs require the Git root; .terragrunt-catalog-ignore scopes discovery.
+    get_repo_root(),
   ]
 }
 
@@ -38,9 +40,9 @@ errors {
 }
 
 generate "providers_definition" {
-  path = "providers_definition.tf"
+  path      = "providers_definition.tf"
   if_exists = "overwrite_terragrunt"
-  contents = <<EOF
+  contents  = <<EOF
 
   provider "azurerm" {
     features {
