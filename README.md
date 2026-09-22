@@ -7,8 +7,9 @@ and Terraform. Reusable Terraform modules belong in
 ## Layout
 
 Each cloud has sibling `root.hcl`, `_envcommon/`, `modules/`, and `live/` entries
-under `infrastructure/<cloud>/`. The shared configuration and local module folders
-are reserved placeholders; reusable modules remain in `platform-blueprints`.
+under `infrastructure/<cloud>/`. General-purpose reusable modules remain in
+`platform-blueprints`. Azure also includes repository-local modules, including
+the [base Entra groups module](docs/azure-groups.md).
 
 ```text
 infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/

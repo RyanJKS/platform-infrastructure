@@ -24,9 +24,9 @@ Commit the unit's `.terraform.lock.hcl` to retain reviewed provider selections.
 
 Each cloud lives under `infrastructure/<cloud>/`, with `root.hcl`, `_envcommon/`,
 `modules/`, and `live/` as siblings. `_envcommon/` is reserved for shared
-Terragrunt configuration; `modules/` is reserved for repository-local Terraform
-modules if needed. Both are empty placeholders today. Reusable modules continue
-to belong in `platform-blueprints`. Accounts and subscriptions live under `live/`.
+Terragrunt configuration; `modules/` holds repository-local Terraform modules,
+including Azure's [base Entra groups](azure-groups.md). General-purpose reusable
+modules remain in `platform-blueprints`. Accounts and subscriptions live under `live/`.
 
 Each region groups resources by spoke. Within a spoke, `platform/` owns shared
 networking and services; `applications/` groups application solutions. Platform
@@ -207,8 +207,9 @@ Module versions are independent: review and pin each unit's `terraform.source`
 to a verified module release or full Git commit. For Git sources the shape is
 `git::https://github.com/RyanJKS/platform-blueprints.git//<actual-module-path>?ref=<verified-module-commit>`.
 These placeholders are explanatory, not usable module references. Another
-explicitly selected module source is acceptable. Keep reusable module code out
-of this repository.
+explicitly selected module source is acceptable. Keep general-purpose reusable
+module code in `platform-blueprints`; repository-specific modules such as the
+base Entra groups module live under `infrastructure/<cloud>/modules/`.
 
 ## Authentication and remote state prerequisites
 

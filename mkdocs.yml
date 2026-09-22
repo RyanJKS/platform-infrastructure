@@ -4,6 +4,7 @@ nav:
   - Home: index.md
   - Deployments: terragrunt.md
   - Azure pipelines: azure-pipelines.md
+  - Azure groups: azure-groups.md
   - Architecture: architecture.md
 plugins:
   - techdocs-core

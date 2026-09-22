@@ -3,13 +3,15 @@
 ## Repository boundaries
 
 `infrastructure/aws/root.hcl` and `infrastructure/azure/root.hcl` independently configure catalog
-access, the supported Terragrunt version, and inherited folder settings. Neither root configures deployment
-infrastructure yet. There are no live units or reusable Terraform modules here.
+access, the supported Terragrunt version, and inherited folder settings.
 
-Reusable Terraform modules and catalog templates belong in
+General-purpose reusable Terraform modules and catalog templates belong in
 [platform-blueprints](https://github.com/RyanJKS/platform-blueprints).
 This consuming repository holds pinned module references, deployment inputs,
 cloud-specific provider and backend configuration, and operational documentation.
+It also contains repository-local Azure modules. The
+[base Entra groups module](azure-groups.md) creates the platform's named security
+groups and their nested memberships; permission assignments remain separate.
 The initial catalog entry is a generic Terragrunt unit template, not a cloud
 module. Catalog discovery requires publication of that entry.
 

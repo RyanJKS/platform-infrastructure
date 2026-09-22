@@ -132,6 +132,21 @@ start a new plan. Do not assume a failed job rolled back infrastructure. A stale
 plan, changed backend, or state lock failure must be resolved before another apply.
 Never bypass backend validation or substitute another unit's plan artifact.
 
+## Development AKS sizing
+
+The `DEV-JKS/dev/eus2/spoke-atlas/platform/aks_cluster` unit uses the AKS Free
+tier and one `Standard_D4as_v5` system node (4 vCPUs and 16 GiB RAM), with
+autoscaling disabled. These settings are explicit overrides in its
+`terragrunt.hcl` inputs. A single node reduces development costs but does not
+provide node redundancy; maintenance or a node failure can interrupt workloads.
+The Free tier covers cluster management, not worker compute, storage, or networking.
+
+Before provisioning, check the subscription's **Standard DASv5 Family vCPUs**
+quota in **East US 2**. Allow 4 available vCPUs for the node, or 8 to accommodate
+one additional surge node during upgrades. Request a total quota limit of
+current family usage plus 8 for that headroom, and check that **Total Regional
+vCPUs** also has sufficient capacity. Quota approval does not itself incur charges.
+
 ## Validation
 
 Run the offline workflow helper tests and documentation build:

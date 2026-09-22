@@ -6,6 +6,8 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Changed
 
+- Configure the Azure development AKS unit with one `Standard_D4as_v5` node,
+  autoscaling disabled, and the Free management tier.
 - Reserve separate Azure hub placeholders under `DEV-HUB/dev/eus2` and
   `PROD-HUB/prod/eus2`, separate from workload subscriptions.
 
@@ -15,6 +17,8 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Added
 
+- Add the local base Entra groups module with READER, WRITER, and ADMIN groups,
+  nested membership, role-keyed object ID outputs, and mocked Terraform tests.
 - Reserve `infrastructure/azure/live/PROD-JKS/` for production workloads with a
   README placeholder.
 
