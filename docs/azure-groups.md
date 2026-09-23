@@ -68,6 +68,14 @@ same inputs. Another unit can read a selected ID using
 `dependency.base_aad_groups.outputs.object_ids["WRITER"]`, with a dependency block
 pointing at the deployed groups unit.
 
+The development `platform/rbacs` unit reads `resource_group.outputs.id` for its
+scope. Its `platform_reader` assignment grants Reader to `object_ids["READER"]`;
+its existing `platform_owner` key grants Contributor to `object_ids["ADMIN"]`.
+There is no `OWNER` group output, and that assignment does not grant the Azure
+Owner role. The unit's dependency mocks match these output shapes and are allowed
+only for `validate` and `plan`; applying requires real dependency outputs. Replan
+with real outputs after deploying dependencies before applying RBAC assignments.
+
 Group names do not assign Azure or Kubernetes permissions. Create the relevant
 role assignments separately, and verify that each consuming service supports
 nested groups. Applications that check only direct membership will not see the
