@@ -1,3 +1,3 @@
 locals {
-  spoke_prefix = "atlas"
+  domain_name = "atlas"
 }
