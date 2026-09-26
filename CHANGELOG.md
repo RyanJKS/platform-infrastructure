@@ -6,6 +6,8 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Changed
 
+- Centralise Azure VNet address allocations in `_envcommon/network-addresses.hcl`,
+  keyed by subscription, region, and spoke, with direct lookups from VNet units.
 - Configure Azure catalog discovery for local modules, with readable catalog
   metadata and filtering that excludes deployment units.
 - Configure the Azure development AKS unit with one `Standard_D4as_v5` node,
@@ -19,6 +21,10 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Added
 
+- Centralise Azure remote module refs in `_envcommon/module-versions.hcl` with
+  plain per-module locals exposed by direct includes in consuming units.
+- Add Azure subscription division labels (`JKS` and `HUB`), exposed through the
+  root configuration as a local and inherited input.
 - Add the local base Entra groups module with READER, WRITER, and ADMIN groups,
   nested membership, role-keyed object ID outputs, and mocked Terraform tests.
 - Reserve `infrastructure/azure/live/PROD-JKS/` for production workloads with a

@@ -117,6 +117,13 @@ infrastructure/azure/
 `PROD-JKS/` reserves the production subscription with a README placeholder only;
 its identity, environment settings, and deployment units are not configured.
 
+Azure subscription settings define `locals.division` as an organisational label:
+`JKS` for `DEV-JKS`, and `HUB` for `DEV-HUB` and `PROD-HUB`. Set this value in
+`subscription.hcl` when adding a subscription. The Azure `root.hcl` exposes it as
+`local.division` and passes it through the subscription locals merged into
+Terraform inputs. Modules must declare and use a `division` variable to consume
+the input; the label does not select a subscription or automatically tag resources.
+
 `DEV-HUB` and `PROD-HUB` reserve separate hubs for development and production.
 Each can serve multiple workload subscriptions within its environment; workload
 subscriptions retain their spokes. Both hub subscription IDs are deliberately
@@ -175,7 +182,61 @@ before planning. Preserve the direct root include. If a template requires an
 empty directory, scaffold into a temporary directory, review the output, and
 copy the unit files beside `unit.hcl`.
 
+## Azure VNet address allocations
+
+Maintain Azure VNet address spaces in
+`infrastructure/azure/_envcommon/network-addresses.hcl`. Its `locals.address_spaces`
+map uses subscription, region, and spoke directory names as keys, for example
+`DEV-JKS` / `eus2` / `spoke-atlas`. The existing allocation is `10.0.0.0/16`.
+The VNet unit exposes this file through a direct `include "network_addresses"`
+block, derives keys from ancestor settings file locations, and reads
+`include.network_addresses.locals.address_spaces`; a missing key fails configuration loading.
+
+Before adding a VNet, add its allocation to this map and review CIDRs for overlap
+with networks it will connect to, including hubs and on-premises networks. Use
+the same lookup in new VNet units rather than duplicating address spaces. Subnet
+prefixes remain in each VNet unit and must fit within its allocation. Hub address
+spaces are not reserved yet. If one subscription later hosts multiple environments
+with matching region and spoke names, add an environment key to the map and lookup.
+
+Renaming a subscription, region, or spoke directory requires updating its map key.
+Changing an allocated CIDR is an infrastructure change; review the Terraform plan
+and connected networks before applying it. Centralisation does not automatically
+validate overlaps or change existing address ranges.
+
 ## Catalog publication and versioning
+
+### Azure module refs
+
+`infrastructure/azure/_envcommon/module-versions.hcl` contains a single `locals`
+block with Git refs named `aks_cluster`, `nsg`, `rbac`, `resource_group`,
+`solution_settings`, and `vnet`. Each consuming unit includes this file directly,
+alongside its root include:
+
+```hcl
+include "envcommon" {
+  path   = "${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/module-versions.hcl"
+  expose = true
+}
+```
+
+Use `include.envcommon.locals.vnet` (or the appropriate module name) in the unit's
+source URL, wrapped in `urlencode(...)`. Store raw Git refs in the shared file.
+Module paths remain in each unit. The root does not load these shared refs, and
+there is no automatic environment override or merge layer. Shared files contain
+locals only and do not include other files. A unit needing multiple shared files
+uses a distinct include label for each file.
+
+Current refs preserve the existing `feature/azure-terraform-modules` branch;
+centralisation does not make these refs immutable. Local modules continue using
+their checkout paths. To upgrade a module, replace its shared ref with a verified
+immutable release tag or full commit SHA, review the module interface, and test
+plans for affected units. A shared ref change affects every unit consuming that
+local. For a staged rollout, add a separate candidate local and explicitly select
+it in the units being tested before promoting the shared ref. This file does not
+pin Terraform, provider versions, or catalog discovery refs.
+
+### Catalog discovery
 
 The Azure root uses this checkout's local modules as its catalog:
 
