@@ -1,3 +1,3 @@
 locals {
-  solution = "MARKETS"
+  solution_name = "MARKETS"
 }
