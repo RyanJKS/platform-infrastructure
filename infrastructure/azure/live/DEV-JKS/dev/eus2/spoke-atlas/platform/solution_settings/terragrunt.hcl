@@ -21,7 +21,7 @@ inputs = {
 
   # Description: The solution name shared by consuming modules.
   # Type: string
-  solution_name = include.root.locals.spoke_prefix
+  solution_name = include.root.locals.domain_name
 
   # Description: The environment name, such as dev, staging, or prod.
   # Type: string
@@ -45,7 +45,7 @@ inputs = {
   # Type: map
   tags = {
     "Environement" : include.root.locals.environment,
-    "Solution" : title(include.root.locals.spoke_prefix),
+    "Solution" : title(include.root.locals.domain_name),
     "Region" : include.root.locals.region_long
   }
 

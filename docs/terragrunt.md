@@ -153,7 +153,12 @@ Settings files are data files, not intermediate includes.
 Inputs merge in this order: account/subscription, environment, region, spoke,
 category, solution (applications only), unit. Later values override earlier
 values. Platform units skip solution settings entirely. Application units
-require `solution.hcl`; missing required settings fail configuration loading.
+require `solution.hcl` in the AWS hierarchy; missing required settings fail configuration loading.
+The Azure root defaults `solution_name` to `null` when `solution.hcl` is absent.
+Azure platform units use `domain_name` from `spoke.hcl`, exposed as
+`include.root.locals.domain_name`, for resource name prefixes and solution labels.
+Its `find_in_parent_folders` call supplies a fallback path so a missing ancestor
+does not throw before `read_terragrunt_config` can return its default locals.
 Set `category` to `platform` or `applications` in the corresponding `category.hcl`.
 
 The `tags` map merges separately in the same order, preserving unrelated inherited
@@ -186,12 +191,13 @@ copy the unit files beside `unit.hcl`.
 
 Maintain Azure VNet address spaces in
 `infrastructure/azure/_envcommon/network-addresses.hcl`. Its `locals.address_spaces`
-map uses subscription, region, and spoke directory names as keys, for example
-`DEV-JKS` / `eus2` / `spoke-atlas`. The existing allocation is `10.0.0.0/16`.
-The VNet unit exposes this file through a direct `include "network_addresses"`
-block, derives keys from ancestor settings file locations, and reads
-`include.network_addresses.locals.address_spaces`; a missing key fails configuration loading.
-
+map uses `subscription_name`, `environment`, `region_short`, and `domain_name`
+from the ancestor settings as keys, for example
+`DEV-JKS` / `dev` / `eus2` / `atlas`. The domain key is `atlas`, not the spoke
+directory name `spoke-atlas`. The existing allocation is `10.0.0.0/16`.
+The VNet unit exposes the file through a direct `include "network_addresses"`
+block and reads `include.network_addresses.locals.address_spaces` using the
+root's exposed locals; a missing key fails configuration loading.
 Before adding a VNet, add its allocation to this map and review CIDRs for overlap
 with networks it will connect to, including hubs and on-premises networks. Use
 the same lookup in new VNet units rather than duplicating address spaces. Subnet

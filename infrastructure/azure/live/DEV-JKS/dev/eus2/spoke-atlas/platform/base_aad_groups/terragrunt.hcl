@@ -5,7 +5,7 @@ terraform {
 }
 
 include "root" {
-  path = find_in_parent_folders("root.hcl")
+  path   = find_in_parent_folders("root.hcl")
   expose = true
 }
 
@@ -16,7 +16,7 @@ inputs = {
 
   # Description: Application or platform prefix for group names, for example ATLAS.
   # Type: string
-  group_prefix = include.root.locals.spoke_prefix
+  group_prefix = include.root.locals.domain_name
 
   # Description: Region label used in group names, for example EUS2. Groups themselves are tenant-wide.
   # Type: string

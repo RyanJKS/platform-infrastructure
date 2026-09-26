@@ -25,7 +25,7 @@ inputs = {
 
   # Description: The name of the Azure resource group.
   # Type: string
-  name = upper("${include.root.locals.spoke_prefix}-NETWORK-${include.root.locals.region_short}-${include.root.locals.environment}-RG")
+  name = upper("${include.root.locals.domain_name}-NETWORK-${include.root.locals.region_short}-${include.root.locals.environment}-RG")
 
   # Description: The Azure region in which to create the resource group, such as uksouth.
   # Type: string

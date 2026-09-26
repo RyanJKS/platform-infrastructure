@@ -6,7 +6,7 @@ locals {
   region_config       = read_terragrunt_config(find_in_parent_folders("region.hcl"))
   spoke_config        = read_terragrunt_config(find_in_parent_folders("spoke.hcl"))
   category_config     = read_terragrunt_config(find_in_parent_folders("category.hcl"))
-  solution_config     = read_terragrunt_config(find_in_parent_folders("solution.hcl"),
+  solution_config = read_terragrunt_config(find_in_parent_folders("solution.hcl", "${get_terragrunt_dir()}/solution.hcl"),
     {
       locals = {
         solution_name = null
@@ -15,14 +15,14 @@ locals {
   )
 
   # Re-usable
-  division        = local.subscription_config.locals.division
-  subscription_id = local.subscription_config.locals.subscription_id
+  division          = local.subscription_config.locals.division
+  subscription_id   = local.subscription_config.locals.subscription_id
   subscription_name = local.subscription_config.locals.subscription_name
-  environment     = local.environment_config.locals.environment
-  region_short    = local.region_config.locals.region_short
-  region_long     = local.region_config.locals.region_long
-  domain_name     = local.spoke_config.locals.domain_name
-  solution_name   = local.solution_config.locals.solution
+  environment       = local.environment_config.locals.environment
+  region_short      = local.region_config.locals.region_short
+  region_long       = local.region_config.locals.region_long
+  domain_name       = local.spoke_config.locals.domain_name
+  solution_name     = local.solution_config.locals.solution_name
 
   # Pre-provisioned
 

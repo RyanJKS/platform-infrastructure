@@ -4,10 +4,19 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ## Unreleased
 
+### Fixed
+
+- Align the Azure VNet address map with the `domain_name` lookup key (`atlas`).
+
+- Use the Azure root's `domain_name` in platform units instead of the undefined
+  `spoke_prefix` local.
+- Allow Azure units without an ancestor `solution.hcl` to use the root's
+  default `solution_name = null` instead of failing the parent-file lookup.
+
 ### Changed
 
 - Centralise Azure VNet address allocations in `_envcommon/network-addresses.hcl`,
-  keyed by subscription, region, and spoke, with direct lookups from VNet units.
+  keyed by subscription, environment, region, and domain, with direct lookups from VNet units.
 - Configure Azure catalog discovery for local modules, with readable catalog
   metadata and filtering that excludes deployment units.
 - Configure the Azure development AKS unit with one `Standard_D4as_v5` node,

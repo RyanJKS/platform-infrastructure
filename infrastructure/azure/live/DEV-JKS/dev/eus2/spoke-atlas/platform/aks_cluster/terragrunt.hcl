@@ -31,27 +31,31 @@ inputs = {
   # Required input variables
   # --------------------------------------------------------------------------------------------------------------------
 
-  # Description: The resource name.
-  # Type: string
-  name = lower("${include.root.locals.spoke_prefix}${include.root.locals.region_short}${include.root.locals.environment}aks")
+  # Description: Shared solution settings. Explicit module inputs take precedence over these defaults.
+  # Type: object
+  settings = dependency.solution_settings.outputs.settings
 
   # Description: The name of the existing resource group.
   # Type: string
   resource_group_name = dependency.resource_group.outputs.name
 
-  # Description: The Azure region in which to create the resource.
-  # Type: string
-  location = dependency.resource_group.outputs.location
-
   # Description: The DNS prefix for the AKS cluster.
   # Type: string
-  dns_prefix = "atlasmarkets"
+  dns_prefix = "atlas"
 
 
   # --------------------------------------------------------------------------------------------------------------------
   # Optional input variables
   # Uncomment the ones you wish to set
   # --------------------------------------------------------------------------------------------------------------------
+
+  # Description: Optional resource name override. Defaults to settings.name_prefix followed by aks.
+  # Type: string
+  # name = null
+
+  # Description: Optional Azure region override. Defaults to settings.region_long.
+  # Type: string
+  # location = null
 
   # Description: Tags to assign to the resource.
   # Type: map

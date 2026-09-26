@@ -27,15 +27,22 @@ dependency "resource_group" {
   }
 }
 
+dependency "solution_settings"{
+  config_path = "../solution_settings"
+}
 
 inputs = {
   # --------------------------------------------------------------------------------------------------------------------
   # Required input variables
   # --------------------------------------------------------------------------------------------------------------------
 
+  # Description: Shared solution settings. Explicit module inputs take precedence over these defaults.
+  # Type: object
+  settings = dependency.solution_settings.outputs.settings
+
   # Description: The resource name.
   # Type: string
-  name = lower("${include.root.locals.spoke_prefix}${include.root.locals.region_short}${include.root.locals.environment}vnet")
+  name = lower("${include.root.locals.domain_name}${include.root.locals.region_short}${include.root.locals.environment}vnet")
 
   # Description: The name of the existing resource group.
   # Type: string
