@@ -37,3 +37,35 @@ Thumbs.db
 *.tfvars.json
 !*.example.tfvars
 crash.log
+
+# Terragrunt caches and local configuration
+.terragrunt-cache/
+.terragrunt-provider-cache/
+.terragrunt-wrapped/
+.terragrunt-local-cache/
+*.local.hcl
+
+# Saved plans, rendered configuration, and crash reports
+*.plan
+plan.out
+tfplan
+plan.json
+terragrunt-debug.tfvars.json
+terragrunt-rendered.json
+crash.*.log
+
+# Cloud credentials (prefer credentials outside the repository)
+.aws/
+.azure/
+.gcp/
+credentials.json
+*-credentials.json
+*-service-account.json
+
+# Generated documentation
+site/
+
+# Local Serena project configuration and caches
+.serena/
+
+.terraform.lock.hcl
