@@ -82,6 +82,34 @@ nested groups. Applications that check only direct membership will not see the
 same effective membership. Do not manage these groups' memberships with separate
 `azuread_group_member` resources: this module manages the full member sets inline.
 
+## Import existing groups
+
+Azure units can place an `imports.hcl` file beside `terragrunt.hcl`. The Azure
+root reads `locals.imports` and generates Terraform import blocks in
+`imports_def.tf`. If the file is absent, the import list is empty.
+
+```hcl
+locals {
+  imports = [
+    {
+      to = "azuread_group.admin"
+      id = "/groups/11111111-1111-1111-1111-111111111111"
+    }
+  ]
+}
+```
+
+Replace the example ID with the existing group's object ID. Add entries for
+`azuread_group.reader` and `azuread_group.writer` as needed. Quote each `to`
+address: Terragrunt cannot resolve Terraform resources while evaluating locals.
+The generator emits the address as an unquoted Terraform resource reference.
+
+Import blocks require Terraform >= 1.5. From the unit directory, run
+`terragrunt render --json` to check configuration evaluation, then
+`terragrunt plan` with the configured identity and state. Review membership,
+owner, and other proposed changes before applying; importing a group also
+brings it under the module's configuration.
+
 ## Validation
 
 From `infrastructure/azure/modules/base_aad_groups`, run:
