@@ -85,7 +85,7 @@ inputs = {
 
   # Description: Tags to assign to the resource.
   # Type: map
-  # tags = {}
+  tags = dependency.solution_settings.outputs.tags
 
   # Description: Custom DNS servers. An empty list uses Azure DNS.
   # Type: list

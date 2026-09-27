@@ -87,7 +87,7 @@ inputs = {
 
   # Description: Tags to assign to the resource.
   # Type: map
-  # tags = {}
+  tags = dependency.solution_settings.outputs.tags
 
   # Description: Subnet ids to assign to the resource.
   # Type: map
