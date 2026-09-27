@@ -187,25 +187,54 @@ before planning. Preserve the direct root include. If a template requires an
 empty directory, scaffold into a temporary directory, review the output, and
 copy the unit files beside `unit.hcl`.
 
+## First plan for the UKS platform
+
+Dependency blocks already define the execution order. `terragrunt run --all plan`
+does not apply upstream units or save their planned outputs to state. On a fresh
+stack, downstream units therefore need mock outputs to evaluate their inputs.
+An `Unknown variable` diagnostic for `dependency` can follow an earlier failure
+to read those outputs; inspect the first upstream error as well.
+
+The DEV-JKS development UKS units provide mocks for solution settings, resource
+groups, AKS, VNet subnet IDs, and Entra group IDs. Mocks are allowed only for
+`validate` and `plan`, and real state outputs take precedence when available.
+Apply requires real dependency outputs. A plan containing mock IDs is a preview;
+after applying upstream units, create a fresh downstream plan with real outputs
+before applying it. Do not apply a saved plan containing mock values.
+
+An NSG skipped because its VNet failed is a downstream consequence. Fix the VNet
+error first, including any missing address allocation described below.
+
 ## Azure VNet address allocations
 
 Maintain Azure VNet address spaces in
-`infrastructure/azure/_envcommon/network-addresses.hcl`. Its `locals.address_spaces`
-map uses `subscription_name`, `environment`, `region_short`, and `domain_name`
-from the ancestor settings as keys, for example
-`DEV-JKS` / `dev` / `eus2` / `atlas`. The domain key is `atlas`, not the spoke
-directory name `spoke-atlas`. The existing allocation is `10.0.0.0/16`.
+`infrastructure/azure/_envcommon/network-addresses.hcl`. Edit only its flat
+`locals.allocations` list, kept in numeric CIDR order. Each entry records `cidr`,
+`subscription`, `environment`, `region`, and `spoke`. Keep CIDRs explicit so adding
+or reordering entries never renumbers existing networks.
+
+The file derives `locals.address_spaces` from that list. This lookup map uses
+`subscription_name`, `environment`, `region_short`, and `domain_name` from the
+ancestor settings as keys, for example `DEV-JKS` / `dev` / `eus2` / `atlas`.
+The domain key is `atlas`, not the spoke directory name `spoke-atlas`.
+The EUS2 allocation is `10.0.0.0/16`; UKS uses `10.1.0.0/16`. The UKS subnets
+are `10.1.1.0/24` and `10.1.2.0/24` for AKS, and `10.1.6.0/24` for application
+integration.
+
 The VNet unit exposes the file through a direct `include "network_addresses"`
 block and reads `include.network_addresses.locals.address_spaces` using the
-root's exposed locals; a missing key fails configuration loading.
-Before adding a VNet, add its allocation to this map and review CIDRs for overlap
+root's exposed locals; a missing key fails configuration loading. Entries with
+the same subscription, environment, region, and spoke are grouped into one list
+of address spaces. Different environments remain separate even when their region
+and spoke names match.
+
+Before adding a VNet, add its allocation to the list and review CIDRs for overlap
 with networks it will connect to, including hubs and on-premises networks. Use
 the same lookup in new VNet units rather than duplicating address spaces. Subnet
 prefixes remain in each VNet unit and must fit within its allocation. Hub address
-spaces are not reserved yet. If one subscription later hosts multiple environments
-with matching region and spoke names, add an environment key to the map and lookup.
-
-Renaming a subscription, region, or spoke directory requires updating its map key.
+spaces are not reserved yet. Renaming a settings key requires updating the
+corresponding allocation field. The list does not automatically select the next
+free CIDR: check gaps against connected networks before assigning them.
 Changing an allocated CIDR is an infrastructure change; review the Terraform plan
 and connected networks before applying it. Centralisation does not automatically
 validate overlaps or change existing address ranges.
