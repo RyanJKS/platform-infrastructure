@@ -13,6 +13,14 @@ locals {
       }
     }
   )
+  # enable imports in custom imports.hcl file
+  import_config = read_terragrunt_config("imports.hcl",
+    {
+      locals = {
+        imports = []
+      }
+    }
+  )
 
   # Re-usable
   division          = local.subscription_config.locals.division
@@ -65,6 +73,19 @@ generate "providers_definition" {
   }
 
   provider "azuread" {}
+EOF
+}
+
+generate "imports_def" {
+  path      = "imports_def.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+    %{for import in local.import_config.locals.imports}
+    import {
+      to = ${import.to}
+      id = "${import.id}"
+    }
+    %{endfor}
 EOF
 }
 

@@ -1,9 +1,11 @@
 locals {
   # Store raw Git refs; consuming units URL-encode them.
-  aks_cluster       = "feature/azure-terraform-modules"
-  nsg               = "feature/azure-terraform-modules"
-  rbac              = "feature/azure-terraform-modules"
-  resource_group    = "feature/azure-terraform-modules"
-  solution_settings = "feature/azure-terraform-modules"
-  vnet              = "feature/azure-terraform-modules"
+  aks_cluster       = "main"
+  aks_extension       = "main"
+  kubernetes_manifest = "main"
+  nsg               = "main"
+  rbac              = "main"
+  resource_group    = "main"
+  solution_settings = "main"
+  vnet              = "main"
 }
