@@ -33,13 +33,13 @@ inputs = {
   # Type: object
   extension = {
     extension_type = "Microsoft.ArgoCD"
-    name = "argocd-ext"
-    release_train = "preview"
+    name           = "argocd-ext"
+    release_train  = "preview"
     configuration_settings = {
-      "redis-ha.enabled"    = "false"
-      "server.service.type" = "ClusterIP"
+      "redis-ha.enabled"         = "false"
+      "server.service.type"      = "ClusterIP"
       deployWithHighAvailability = "false"
-      namespaceInstall = "false"
+      namespaceInstall           = "false"
     }
   }
 

@@ -13,4 +13,3 @@ output "groups" {
 output "service_principals" {
   value = data.azuread_service_principals.service_principals
 }
-
