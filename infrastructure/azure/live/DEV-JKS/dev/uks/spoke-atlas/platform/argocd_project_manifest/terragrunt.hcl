@@ -14,6 +14,10 @@ include "envcommon" {
   expose = true
 }
 
+dependencies {
+  paths = ["../aks_argocd_extension"]
+}
+
 dependency "aks" {
   config_path = "../aks_cluster"
 
@@ -63,7 +67,7 @@ inputs = {
 
       source = {
         repoURL        = "https://github.com/RyanJKS/platform-gitops.git"
-        targetRevision = "feature/repo-setup"
+        targetRevision = "main"
 
         path = "clusters/azure/${include.root.locals.subscription_name}/${include.root.locals.environment}/${include.root.locals.region_short}/spoke-${include.root.locals.domain_name}/aks-shared/argocd"
       }

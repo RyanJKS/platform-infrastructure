@@ -35,6 +35,14 @@ dependency "resource_group" {
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
+dependency "dns" {
+  config_path = "../dns"
+}
+
+dependency "aks_cluster" {
+  config_path = "../aks_cluster"
+}
+
 inputs = {
   # --------------------------------------------------------------------------------------------------------------------
   # Required input variables
@@ -54,6 +62,13 @@ inputs = {
       principal_id         = dependency.base_aad_groups.outputs.object_ids["ADMIN"]
       type                 = "Group"
       role_definition_name = "Contributor"
+    }
+    # required to allow app routing identity perms to manage records in DNS
+    aks_cluster_web_app_identity = {
+      scope = dependency.dns.outputs.id
+      principal_id = dependency.aks_cluster.outputs.web_app_routing_identity[0].object_id
+      type = "ServicePrincipal"
+      role_definition_name = "DNS Zone Contributor"
     }
   }
 

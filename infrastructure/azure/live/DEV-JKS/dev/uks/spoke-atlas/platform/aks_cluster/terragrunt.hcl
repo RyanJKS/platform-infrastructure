@@ -47,6 +47,13 @@ dependency "solution_settings" {
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
+dependency "dns" {
+  config_path = "../dns"
+  mock_outputs = {
+    id = "00000000-0000-0000-0000-000000000000"
+  }
+}
+
 inputs = {
   # --------------------------------------------------------------------------------------------------------------------
   # Required input variables
@@ -59,11 +66,6 @@ inputs = {
   # Description: The name of the existing resource group.
   # Type: string
   resource_group_name = dependency.resource_group.outputs.name
-
-  # Description: The DNS prefix for the AKS cluster.
-  # Type: string
-  dns_prefix = "atlas"
-
 
   # --------------------------------------------------------------------------------------------------------------------
   # Optional input variables
@@ -81,6 +83,10 @@ inputs = {
   # Description: Tags to assign to the resource.
   # Type: map
   tags = dependency.solution_settings.outputs.tags
+
+  # Description: The DNS prefix for the AKS cluster. Set exactly one of dns_prefix or dns_prefix_private_cluster.
+  # Type: string
+  dns_prefix = lower("${dependency.solution_settings.outputs.settings.name_prefix}aks")
 
   # Description: The Kubernetes version. Null uses the regional Azure default.
   # Type: string
@@ -118,7 +124,7 @@ inputs = {
 
   # Description: The AKS pricing tier.
   # Type: string
-  sku_tier = "Free"
+  # sku_tier = "Free"
 
   # Description: Whether local accounts are disabled. Null disables them when Entra integration is enabled.
   # Type: bool
@@ -134,10 +140,41 @@ inputs = {
 
   # Description: Managed Prometheus metrics settings. Null disables the addon.
   # Type: object
-  monitor_metrics = {}
+  # monitor_metrics = {}
 
   # Description: Application routing settings and Azure DNS zone IDs. Null disables the addon.
   # Type: object
-  web_app_routing = {}
+  web_app_routing = {
+    dns_zone_ids = [dependency.dns.outputs.id]
+    default_nginx_controller = "External"
+  }
+
+  # Description: Private cluster DNS prefix. Use instead of dns_prefix with a private cluster and a custom private DNS zone.
+  # Type: string
+  # dns_prefix_private_cluster = null
+
+  # Description: Private DNS zone resource ID, System, or None. Null uses the AKS default. Custom zones require caller-managed identity permissions.
+  # Type: string
+  # private_dns_zone_id = null
+
+  # Description: Existing kubelet identity. Requires a user-assigned control-plane identity and caller-managed assignment permissions.
+  # Type: object
+  kubelet_identity = null
+
+  # Description: AKS networking configuration. The default preserves Azure CNI overlay networking.
+  # Type: object
+  # network_profile = {"network_plugin":"azure","network_plugin_mode":"overlay"}
+
+  # Description: Application Gateway ingress using an existing gateway. Null disables the addon.
+  # Type: object
+  ingress_application_gateway = null
+
+  # Description: Kubernetes secret encryption with an existing Key Vault key. Null disables KMS. Key permissions and private connectivity are caller-managed.
+  # Type: object
+  key_management_service = null
+
+  # Description: Container Insights with an existing Log Analytics workspace. Null disables the addon.
+  # Type: object
+  oms_agent = null
 
 }

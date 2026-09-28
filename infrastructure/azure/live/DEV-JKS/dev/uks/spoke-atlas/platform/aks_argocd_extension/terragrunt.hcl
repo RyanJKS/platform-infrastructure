@@ -66,10 +66,26 @@ inputs = {
     name           = "argocd-ext"
     release_train  = "preview"
     configuration_settings = {
-      "redis-ha.enabled"         = "false"
-      "server.service.type"      = "ClusterIP"
       deployWithHighAvailability = "false"
       namespaceInstall           = "false"
+
+      "redis-ha.enabled"    = "false"
+      "controller.replicas" = "1"
+      "repoServer.replicas" = "1"
+      "applicationSet.replicas" = "1"
+      "server.replicas"     = "1"
+
+      "global.domain"       = "argocd.jkslabs.site"
+      "configs.cm.url"      = "https://argocd.jkslabs.site"
+
+      "server.service.type"             = "ClusterIP"
+      "server.ingress.enabled"          = "true"
+      "server.ingress.hostname"         = "argocd.jkslabs.site"
+      "server.ingress.ingressClassName" = "webapprouting.kubernetes.azure.com"
+      "server.ingress.tls"              = "true"
+
+      "server.ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/backend-protocol" = "HTTPS"
+      "server.ingress.annotations.cert-manager\\.io/cluster-issuer" = "letsencrypt-prod"
     }
   }
 
