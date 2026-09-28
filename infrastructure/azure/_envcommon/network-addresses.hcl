@@ -6,14 +6,14 @@ locals {
       subscription = "DEV-JKS"
       environment  = "dev"
       region       = "eus2"
-      spoke        = "atlas"
+      domain       = "atlas"
     },
     {
       cidr         = "10.1.0.0/16"
       subscription = "DEV-JKS"
       environment  = "dev"
       region       = "uks"
-      spoke        = "atlas"
+      domain       = "atlas"
     },
   ]
 
@@ -37,7 +37,7 @@ locals {
         } :
         region => {
           for allocation in region_allocations :
-          allocation.spoke => allocation.cidr...
+          allocation.domain => allocation.cidr...
         }
       }
     }

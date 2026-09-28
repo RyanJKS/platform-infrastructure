@@ -18,10 +18,10 @@ uses `platform-blueprints`; remote entries require publication before discovery.
 
 ## Deployment boundaries
 
-Units live beneath `infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/<spoke>`.
-Each spoke has `platform/<unit>` for shared infrastructure and
-`applications/<solution>/<unit>` for application resources. The current spoke is
-`spoke-atlas`. Azure reserves separate hub subscriptions at
+Units live beneath `infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/<domain>`.
+Each domain represents a spoke and has `platform/<unit>` for shared infrastructure and
+`applications/<solution>/<unit>` for application resources. The current domain is
+`atlas`, with settings in `domain.hcl`. Azure reserves separate hub subscriptions at
 `infrastructure/azure/live/DEV-HUB/dev/eus2/hub/` and
 `infrastructure/azure/live/PROD-HUB/prod/eus2/hub/`; workload subscriptions
 contain their spokes. Each hub can serve multiple subscriptions within its own
@@ -47,7 +47,7 @@ No state migration or backend bootstrapping is performed by this setup.
 ## Additional clouds
 
 When GCP is needed, add `infrastructure/gcp/root.hcl` and use
-`live/<project>/<environment>/<region>/<spoke>/platform/<unit>/terragrunt.hcl`
+`live/<project>/<environment>/<region>/<domain>/platform/<unit>/terragrunt.hcl`
 or the corresponding `applications/<solution>/<unit>` branch below it.
 Configure GCP identity and an existing GCS backend in that root, retaining the
 project boundary in each state key. Each GCP unit must include the GCP root

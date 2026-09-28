@@ -69,7 +69,7 @@ inputs = {
         repoURL        = "https://github.com/RyanJKS/platform-gitops.git"
         targetRevision = "main"
 
-        path = "clusters/azure/${include.root.locals.subscription_name}/${include.root.locals.environment}/${include.root.locals.region_short}/spoke-${include.root.locals.domain_name}/aks-shared/argocd"
+        path = "clusters/azure/${include.root.locals.subscription_name}/${include.root.locals.environment}/${include.root.locals.region_short}/${include.root.locals.domain_name}/aks-shared/argocd"
       }
 
       destination = {

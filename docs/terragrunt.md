@@ -28,17 +28,18 @@ Terragrunt configuration; `modules/` holds repository-local Terraform modules,
 including Azure's [base Entra groups](azure-groups.md). General-purpose reusable
 modules remain in `platform-blueprints`. Accounts and subscriptions live under `live/`.
 
-Each region groups resources by spoke. Within a spoke, `platform/` owns shared
-networking and services; `applications/` groups application solutions. Platform
+Each region groups resources by domain. Each domain is a spoke in the network
+topology. Within a domain, `platform/` owns shared networking and services; `applications/` groups application solutions. Platform
 units sit directly beneath `platform/`. Application units have an extra solution
 level. Representative paths are:
 
 ```text
-infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/<spoke>/platform/<unit>/terragrunt.hcl
-infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/<spoke>/applications/<solution>/<unit>/terragrunt.hcl
+infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/<domain>/platform/<unit>/terragrunt.hcl
+infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/<domain>/applications/<solution>/<unit>/terragrunt.hcl
 ```
 
-The current spoke is `spoke-atlas`. AWS uses `example-account/dev/eu-west-2`;
+The current domain is `atlas`, configured in `atlas/domain.hcl`.
+AWS uses `example-account/dev/eu-west-2`;
 Azure uses `DEV-JKS/dev/eus2` for workloads and `DEV-HUB/dev/eus2` and `PROD-HUB/prod/eus2` for hub placeholders. Folder names do not select or authenticate cloud
 identities. Review the account/subscription settings before deployment. Use
 separate cloud accounts or subscriptions for production and development where
@@ -53,7 +54,7 @@ include "root" {
 ```
 
 Do not introduce intermediate roots or nested includes. Future clouds can use
-the same spoke layout with their own identity settings and cloud root.
+the same domain layout with their own identity settings and cloud root.
 
 ## Shared platform and application settings
 
@@ -101,8 +102,8 @@ infrastructure/azure/
         env.hcl
         eus2/
           region.hcl
-          spoke-atlas/
-            spoke.hcl
+          atlas/
+            domain.hcl
             platform/
               category.hcl
               resource_group/terragrunt.hcl
@@ -132,30 +133,30 @@ Cross-subscription peering and private DNS links still need explicit configurati
 and permissions, with ownership defined for both peering directions and DNS links.
 No hub resources or connections are deployed by this layout.
 
-The Azure folders currently use `env.hcl` and direct locals, while `root.hcl`
-still expects `environment.hcl` and `locals.inputs`. Reconcile that existing
-settings mismatch and add hub-aware inheritance before scaffolding hub units;
-the current root also requires `spoke.hcl`.
+Azure uses `env.hcl` and direct locals, which its cloud root reads. Add hub-aware
+inheritance before scaffolding hub units: the current root requires `domain.hcl`,
+which hub placeholders do not provide.
 
 `orders` is an example application name. Add more application solutions beneath
-`spoke-atlas/applications/`, or add another spoke beside `spoke-atlas` with its own
+`atlas/applications/`, or add another domain beside `atlas` with its own
 settings, platform units, and applications. Keep actual account/subscription
-boundaries above the spoke. The Azure hub READMEs under `DEV-HUB/dev/eus2/` and `PROD-HUB/prod/eus2/`,
+boundaries above the domain. The Azure hub READMEs under `DEV-HUB/dev/eus2/` and `PROD-HUB/prod/eus2/`,
 and the AWS account-local hub README
 record that hub setup is required; it documents proposed unit folders under `hub/platform/`, with no deployable HCL.
 There is no hub peering configuration yet.
 
-Each settings file defines `locals.inputs`. The root reads ancestor settings
+AWS settings files define `locals.inputs`. The root reads ancestor settings
 with `read_terragrunt_config` and `find_in_parent_folders`; it reads `unit.hcl`
 from `get_original_terragrunt_dir()`, the directory of the consuming unit.
 Settings files are data files, not intermediate includes.
 
-Inputs merge in this order: account/subscription, environment, region, spoke,
+AWS inputs merge in this order: account, environment, region, domain,
 category, solution (applications only), unit. Later values override earlier
 values. Platform units skip solution settings entirely. Application units
 require `solution.hcl` in the AWS hierarchy; missing required settings fail configuration loading.
-The Azure root defaults `solution_name` to `null` when `solution.hcl` is absent.
-Azure platform units use `domain_name` from `spoke.hcl`, exposed as
+Azure merges direct locals from subscription, environment, region, and domain
+settings into its inputs. The Azure root defaults `solution_name` to `null` when `solution.hcl` is absent.
+Azure platform units use `domain_name` from `domain.hcl`, exposed as
 `include.root.locals.domain_name`, for resource name prefixes and solution labels.
 Its `find_in_parent_folders` call supplies a fallback path so a missing ancestor
 does not throw before `read_terragrunt_config` can return its default locals.
@@ -168,7 +169,7 @@ explicit unit `tags` input replaces the inherited map. Prefer putting unit tags
 in `unit.hcl`.
 
 Shared values include `account_name` or `subscription_name`, `environment`, AWS
-`region` or Azure `location`, `spoke`, `category`, `unit`, and `tags`. Application
+`region` or Azure `location`, `domain_name`, `category`, `unit`, and `tags`. Application
 units also inherit `solution`. Terraform modules must declare and use the
 corresponding variables; these inputs do not configure providers, authenticate
 cloud identities, or automatically tag resources. Add module-specific values to
@@ -210,13 +211,13 @@ error first, including any missing address allocation described below.
 Maintain Azure VNet address spaces in
 `infrastructure/azure/_envcommon/network-addresses.hcl`. Edit only its flat
 `locals.allocations` list, kept in numeric CIDR order. Each entry records `cidr`,
-`subscription`, `environment`, `region`, and `spoke`. Keep CIDRs explicit so adding
+`subscription`, `environment`, `region`, and `domain`. Keep CIDRs explicit so adding
 or reordering entries never renumbers existing networks.
 
 The file derives `locals.address_spaces` from that list. This lookup map uses
 `subscription_name`, `environment`, `region_short`, and `domain_name` from the
 ancestor settings as keys, for example `DEV-JKS` / `dev` / `eus2` / `atlas`.
-The domain key is `atlas`, not the spoke directory name `spoke-atlas`.
+The domain key is `atlas`, matching the domain directory name.
 The EUS2 allocation is `10.0.0.0/16`; UKS uses `10.1.0.0/16`. The UKS subnets
 are `10.1.1.0/24` and `10.1.2.0/24` for AKS, and `10.1.6.0/24` for application
 integration.
@@ -224,9 +225,9 @@ integration.
 The VNet unit exposes the file through a direct `include "network_addresses"`
 block and reads `include.network_addresses.locals.address_spaces` using the
 root's exposed locals; a missing key fails configuration loading. Entries with
-the same subscription, environment, region, and spoke are grouped into one list
+the same subscription, environment, region, and domain are grouped into one list
 of address spaces. Different environments remain separate even when their region
-and spoke names match.
+and domain names match.
 
 Before adding a VNet, add its allocation to the list and review CIDRs for overlap
 with networks it will connect to, including hubs and on-premises networks. Use
@@ -368,8 +369,8 @@ to its cloud root:
 This yields:
 
 ```text
-Platform:     live/<identity>/<environment>/<region>/<spoke>/platform/<unit>/terraform.tfstate
-Applications: live/<identity>/<environment>/<region>/<spoke>/applications/<solution>/<unit>/terraform.tfstate
+Platform:     live/<identity>/<environment>/<region>/<domain>/platform/<unit>/terraform.tfstate
+Applications: live/<identity>/<environment>/<region>/<domain>/applications/<solution>/<unit>/terraform.tfstate
 ```
 
 Never strip the account/subscription, environment, solution, or unit segments.
@@ -393,6 +394,24 @@ and verify backend access. If existing state is involved, stop and design a
 separate migration. Renaming any path segment changes the key and can make
 Terraform see an empty state; never accept a resulting recreation plan blindly.
 
+### Domain folder rename
+
+Domain folders use `<domain>/domain.hcl`; the domain itself represents the spoke.
+The Atlas folders were renamed from `spoke-atlas/` to `atlas/`, and both cloud
+roots now read `domain.hcl`. AWS exposes `domain_name = "atlas"` and the `Domain`
+tag through its inherited inputs. Azure retains `domain_name = "atlas"`.
+
+For existing deployments, this rename changes path-derived state keys from
+`.../spoke-atlas/.../terraform.tfstate` to `.../atlas/.../terraform.tfstate`.
+Before planning or applying, coordinate a reviewed state migration for every
+affected unit, back up existing state, and verify that the new key contains the
+expected resources. This repository change does not move remote state. Update
+workflow `scope` inputs and destroy confirmations to use `atlas`.
+
+The UKS Argo CD source path also uses the domain without a `spoke-` prefix:
+`clusters/azure/<subscription>/<environment>/<region>/<domain>/aks-shared/argocd`.
+Move the matching manifests in the GitOps repository before applying that unit.
+
 ## Scaffold and plan one unit
 
 1. Select a real module and verify its immutable reference, required inputs,
@@ -403,11 +422,12 @@ Terraform see an empty state; never accept a resulting recreation plan blindly.
    remote backend as described above. Resolve account/subscription mappings and
    state access before any plan.
 3. Copy or adapt the example settings hierarchy using reviewed deployment
-   names. Create `account.hcl` or `subscription.hcl`, `environment.hcl`,
-   `region.hcl`, `spoke.hcl`, `category.hcl`, and `unit.hcl` at their respective
-   levels. Application solutions also require `solution.hcl`.
-   Each file must define `locals.inputs` (an empty map is allowed). Enter the
-   unit directory and keep `terragrunt.hcl` absent until scaffolding completes.
+   names. AWS uses `account.hcl`, `environment.hcl`, `region.hcl`, `domain.hcl`,
+   `category.hcl`, and `unit.hcl` with `locals.inputs` at their respective levels.
+   Azure uses `subscription.hcl`, `env.hcl`, `region.hcl`, and `domain.hcl`
+   with direct locals. Application solutions use `solution.hcl`. Follow the
+   existing settings for the chosen cloud. Enter the unit directory and keep
+   `terragrunt.hcl` absent until scaffolding completes.
 4. From the unit directory (without a `terragrunt.hcl` yet), run:
 
    ```sh

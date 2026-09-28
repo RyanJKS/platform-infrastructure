@@ -15,6 +15,11 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Changed
 
+- Rename domain folders from `spoke-atlas/` to `atlas/` and settings from
+  `spoke.hcl` to `domain.hcl` across AWS and Azure. Update inherited inputs,
+  address allocation labels, workflow defaults, and the UKS Argo CD source path.
+  Existing deployments require reviewed state and GitOps path migrations.
+
 - Centralise Azure VNet address allocations in `_envcommon/network-addresses.hcl`,
   keyed by subscription, environment, region, and domain, with direct lookups from VNet units.
 - Configure Azure catalog discovery for local modules, with readable catalog

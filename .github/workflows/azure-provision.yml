@@ -18,9 +18,9 @@ on:
         default: uksouth
         required: true
       scope:
-        description: Spoke folder (hub is currently a placeholder)
+        description: Domain folder (hub is currently a placeholder)
         type: string
-        default: spoke-atlas
+        default: atlas
         required: true
       category:
         description: Unit category

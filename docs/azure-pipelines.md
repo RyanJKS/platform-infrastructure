@@ -55,8 +55,8 @@ The Azure backend must use the complete unit path relative to `infrastructure/az
 state key, with `/terraform.tfstate` appended. For example:
 
 ```text
-live/DEV-JKS/dev/uksouth/spoke-atlas/platform/vnet/terraform.tfstate
-live/DEV-JKS/dev/uksouth/spoke-atlas/applications/orders/database/terraform.tfstate
+live/DEV-JKS/dev/uksouth/atlas/platform/vnet/terraform.tfstate
+live/DEV-JKS/dev/uksouth/atlas/applications/orders/database/terraform.tfstate
 ```
 
 After initialization, the workflow checks the backend type, storage account,
@@ -76,11 +76,15 @@ Open **Actions**, choose **Azure provision** or **Azure deprovision**, and selec
 | `subscription` | `DEV-JKS` | `DEV-JKS` |
 | `environment` | `dev` | `dev` |
 | `region` | `uksouth` | `uksouth` |
-| `scope` | `spoke-atlas` | `spoke-atlas` |
+| `scope` | `atlas` | `atlas` |
 | `category` | `platform` | `applications` |
 | `application` | Leave empty | `orders` |
 | `unit` | `vnet` | `database` |
 | `action` | `plan` or `apply` | `plan` or `apply` |
+
+`scope` is the domain folder name, such as `atlas`, without a `spoke-` prefix.
+For renamed deployments, follow the [state migration guidance](terragrunt.md#domain-folder-rename)
+before running a workflow.
 
 Every folder input must be a single name containing letters, numbers, underscores,
 or hyphens, starting with a letter or number. Paths, shell expressions, and
@@ -102,7 +106,7 @@ execution, run it with `action=apply` and set `confirmation` to the exact
 repository-relative directory, for example:
 
 ```text
-infrastructure/azure/live/DEV-JKS/dev/uksouth/spoke-atlas/applications/orders/database
+infrastructure/azure/live/DEV-JKS/dev/uksouth/atlas/applications/orders/database
 ```
 
 The workflow rejects missing or mismatched confirmation before accessing Azure.
@@ -134,7 +138,7 @@ Never bypass backend validation or substitute another unit's plan artifact.
 
 ## Development AKS sizing
 
-The `DEV-JKS/dev/eus2/spoke-atlas/platform/aks_cluster` unit uses the AKS Free
+The `DEV-JKS/dev/eus2/atlas/platform/aks_cluster` unit uses the AKS Free
 tier and one `Standard_D4as_v5` system node (4 vCPUs and 16 GiB RAM), with
 autoscaling disabled. These settings are explicit overrides in its
 `terragrunt.hcl` inputs. A single node reduces development costs but does not
