@@ -14,8 +14,8 @@ the [base Entra groups module](docs/azure-groups.md).
 ```text
 infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/
   region.hcl
-  spoke-atlas/
-    spoke.hcl
+  atlas/
+    domain.hcl
     platform/
       category.hcl
       <unit>/unit.hcl
@@ -26,7 +26,7 @@ infrastructure/<cloud>/live/<account-or-subscription>/<environment>/<region>/
         <unit>/unit.hcl
 ```
 
-AWS and Azure cloud roots load shared inputs from the folder settings. Spoke
+AWS and Azure cloud roots load shared inputs from the folder settings. Each domain represents a spoke. Domain
 platform units own networking and monitoring; application solutions contain
 their own units. Azure reserves separate hub placeholders under
 `infrastructure/azure/live/DEV-HUB/dev/eus2/hub/` and

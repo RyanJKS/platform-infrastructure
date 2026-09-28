@@ -4,7 +4,7 @@ locals {
   subscription_config = read_terragrunt_config(find_in_parent_folders("subscription.hcl"))
   environment_config  = read_terragrunt_config(find_in_parent_folders("env.hcl"))
   region_config       = read_terragrunt_config(find_in_parent_folders("region.hcl"))
-  spoke_config        = read_terragrunt_config(find_in_parent_folders("spoke.hcl"))
+  domain_config       = read_terragrunt_config(find_in_parent_folders("domain.hcl"))
   category_config     = read_terragrunt_config(find_in_parent_folders("category.hcl"))
   solution_config = read_terragrunt_config(find_in_parent_folders("solution.hcl", "${get_terragrunt_dir()}/solution.hcl"),
     {
@@ -29,7 +29,7 @@ locals {
   environment       = local.environment_config.locals.environment
   region_short      = local.region_config.locals.region_short
   region_long       = local.region_config.locals.region_long
-  domain_name       = local.spoke_config.locals.domain_name
+  domain_name       = local.domain_config.locals.domain_name
   solution_name     = local.solution_config.locals.solution_name
 
   # Pre-provisioned
@@ -94,5 +94,5 @@ inputs = merge(
   local.subscription_config.locals,
   local.environment_config.locals,
   local.region_config.locals,
-  local.spoke_config.locals
+  local.domain_config.locals
 )

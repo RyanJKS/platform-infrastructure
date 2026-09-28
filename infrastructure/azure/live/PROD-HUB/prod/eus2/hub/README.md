@@ -33,7 +33,7 @@ hub/
 - Confirm the real `PROD-HUB` subscription ID and the East US 2 regional scope.
 - Select modules and define routing, DNS, firewall, and spoke connection ownership.
 - Align the Azure `env.hcl` settings with root inheritance before implementation.
-- Extend root settings inheritance for hubs: current roots require `spoke.hcl`.
+- Extend root settings inheritance for hubs: current roots require `domain.hcl`.
   Do not scaffold hub units with the current spoke configuration unchanged.
 - Configure authentication, providers, and isolated remote state for each unit.
 
