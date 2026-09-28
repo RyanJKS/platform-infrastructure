@@ -65,9 +65,9 @@ inputs = {
     }
     # required to allow app routing identity perms to manage records in DNS
     aks_cluster_web_app_identity = {
-      scope = dependency.dns.outputs.id
-      principal_id = dependency.aks_cluster.outputs.web_app_routing_identity[0].object_id
-      type = "ServicePrincipal"
+      scope                = dependency.dns.outputs.id
+      principal_id         = dependency.aks_cluster.outputs.web_app_routing_identity[0].object_id
+      type                 = "ServicePrincipal"
       role_definition_name = "DNS Zone Contributor"
     }
   }

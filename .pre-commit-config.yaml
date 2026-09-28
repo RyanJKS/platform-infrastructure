@@ -8,8 +8,12 @@ repos:
       - id: check-merge-conflict
       - id: detect-private-key
       - id: check-added-large-files
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.12
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.30 # Get the latest from: https://github.com/gruntwork-io/pre-commit/releases
     hooks:
-      - id: ruff-check
-      - id: ruff-format
+      - id: terragrunt-hcl-fmt
+      - id: terraform-fmt
+      - id: tflint
+      - id: shellcheck
+      - id: gofmt
+      - id: golint

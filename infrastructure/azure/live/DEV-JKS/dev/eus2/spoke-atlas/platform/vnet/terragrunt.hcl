@@ -27,7 +27,7 @@ dependency "resource_group" {
   }
 }
 
-dependency "solution_settings"{
+dependency "solution_settings" {
   config_path = "../solution_settings"
 }
 

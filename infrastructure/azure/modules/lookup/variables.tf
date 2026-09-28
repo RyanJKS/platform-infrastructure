@@ -25,4 +25,3 @@ variable "ignore_missing" {
     azuread_service_principals = true,
   }
 }
-

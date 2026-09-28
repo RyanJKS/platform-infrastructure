@@ -71,14 +71,14 @@ inputs = {
       deployWithHighAvailability = "false"
       namespaceInstall           = "false"
 
-      "redis-ha.enabled"    = "false"
-      "controller.replicas" = "1"
-      "repoServer.replicas" = "1"
+      "redis-ha.enabled"        = "false"
+      "controller.replicas"     = "1"
+      "repoServer.replicas"     = "1"
       "applicationSet.replicas" = "1"
-      "server.replicas"     = "1"
+      "server.replicas"         = "1"
 
-      "global.domain"       = "argocd.jkslabs.site"
-      "configs.cm.url"      = "https://argocd.jkslabs.site"
+      "global.domain"  = "argocd.jkslabs.site"
+      "configs.cm.url" = "https://argocd.jkslabs.site"
 
       "server.service.type"             = "ClusterIP"
       "server.ingress.enabled"          = "true"
@@ -87,7 +87,7 @@ inputs = {
       "server.ingress.tls"              = "true"
 
       "server.ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/backend-protocol" = "HTTPS"
-      "server.ingress.annotations.cert-manager\\.io/cluster-issuer" = "letsencrypt-prod"
+      "server.ingress.annotations.cert-manager\\.io/cluster-issuer"                   = "letsencrypt-prod"
     }
   }
 

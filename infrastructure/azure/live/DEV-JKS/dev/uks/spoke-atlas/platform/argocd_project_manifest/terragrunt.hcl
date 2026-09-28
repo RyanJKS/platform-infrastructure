@@ -33,7 +33,7 @@ dependency "aks" {
 generate "kubernetes_provider" {
   path      = "provider-kubernetes.tf"
   if_exists = "overwrite_terragrunt"
-  contents = <<-EOF
+  contents  = <<-EOF
     provider "kubernetes" {
       host                   = "${dependency.aks.outputs.host}"
       cluster_ca_certificate = base64decode("${dependency.aks.outputs.cluster_ca_certificate}")

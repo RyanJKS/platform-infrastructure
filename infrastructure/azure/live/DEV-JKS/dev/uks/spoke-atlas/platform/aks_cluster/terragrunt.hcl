@@ -145,7 +145,7 @@ inputs = {
   # Description: Application routing settings and Azure DNS zone IDs. Null disables the addon.
   # Type: object
   web_app_routing = {
-    dns_zone_ids = [dependency.dns.outputs.id]
+    dns_zone_ids             = [dependency.dns.outputs.id]
     default_nginx_controller = "External"
   }
 
