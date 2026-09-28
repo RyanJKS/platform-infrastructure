@@ -46,6 +46,8 @@ dependency "aks_cluster" {
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
+## EXTENSION CAN ONLY BE USED IF AKS CLUSTER HAS SYSTEM-ASSIGNED MANAGED IDENTITY: https://learn.microsoft.com/en-us/azure/azure-arc/kubernetes/tutorial-use-gitops-argocd#azure-kubernetes-service-clusters
+
 inputs = {
   # --------------------------------------------------------------------------------------------------------------------
   # Required input variables
