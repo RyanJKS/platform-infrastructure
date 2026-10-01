@@ -185,7 +185,7 @@ jobs:
           set -euo pipefail
           terragrunt run -- init -input=false -lockfile=readonly
           terragrunt exec --in-download-dir -- python3 "$GITHUB_WORKSPACE/.github/scripts/azure_unit.py" backend
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: azure-unit-plan-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/azure-plan
