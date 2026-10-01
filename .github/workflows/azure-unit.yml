@@ -154,7 +154,7 @@ jobs:
             echo "Commit: $GITHUB_SHA"
             echo "Review the plan step logs before approving apply."
           } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: azure-unit-plan-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/azure-plan/unit.tfplan
