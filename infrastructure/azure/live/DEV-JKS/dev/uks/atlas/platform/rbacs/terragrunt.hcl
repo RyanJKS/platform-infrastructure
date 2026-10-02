@@ -17,30 +17,37 @@ include "envcommon" {
 dependency "base_aad_groups" {
   config_path = "../base_aad_groups"
 
-  mock_outputs = {
-    object_ids = {
-      READER = "11111111-1111-1111-1111-111111111111"
-      WRITER = "22222222-2222-2222-2222-222222222222"
-      ADMIN  = "33333333-3333-3333-3333-333333333333"
-    }
-  }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs = include.root.locals.mocks.base_aad_groups
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
 dependency "resource_group" {
   config_path = "../resource_group"
-  mock_outputs = {
-    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/mock-resource-group"
-  }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+
+  mock_outputs = include.root.locals.mocks.resource_group
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "dns" {
   config_path = "../dns"
+
+  mock_outputs = include.root.locals.mocks.dns
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "aks_cluster" {
   config_path = "../aks_cluster"
+
+  mock_outputs = include.root.locals.mocks.aks_cluster
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 inputs = {

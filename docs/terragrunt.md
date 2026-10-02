@@ -196,9 +196,67 @@ stack, downstream units therefore need mock outputs to evaluate their inputs.
 An `Unknown variable` diagnostic for `dependency` can follow an earlier failure
 to read those outputs; inspect the first upstream error as well.
 
-The DEV-JKS development UKS units provide mocks for solution settings, resource
-groups, AKS, VNet subnet IDs, and Entra group IDs. Mocks are allowed only for
-`validate` and `plan`, and real state outputs take precedence when available.
+The DEV-JKS development UKS units share mock outputs from
+`infrastructure/azure/_mocks/outputs.hcl`. The Azure `root.hcl` loads this file with
+`read_terragrunt_config` and exposes its locals through `include.root.locals.mocks`.
+The file contains fixtures for resource groups, solution settings, AKS, DNS,
+VNet subnet IDs, and Entra group IDs, plus the allowed commands. Solution settings
+are keyed by domain, so `atlas` and `intro` use their own names and tags.
+These fixtures describe development UKS only; add appropriate fixtures before
+using them in another environment or region.
+
+Keep dependency paths in each unit and reference the shared output schema:
+
+```hcl
+dependency "resource_group" {
+  config_path = "../resource_group"
+
+  mock_outputs = include.root.locals.mocks.resource_group
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
+}
+```
+
+For solution settings, use
+`include.root.locals.mocks.solution_settings[include.root.locals.domain_name]`.
+Edit the shared fixture when a module adds an output consumed by downstream units.
+Keep the output names and types aligned with the producing module. Sharing mocks
+does not create missing dependency units or resolve unrelated input errors.
+
+Mocks are allowed only for `validate` and `plan`. The `shallow` merge strategy
+preserves real top-level outputs and supplies mocks for missing outputs. Solution
+settings, VNet, and Entra group dependencies use `deep_map_only` to also fill
+missing nested map keys; lists are not merged. Keep `skip_outputs` unset so
+Terragrunt reads real outputs when available. See the Terragrunt references for
+[reading shared configuration](https://terragrunt.gruntwork.io/docs/reference/hcl/functions/#read_terragrunt_config)
+and [dependency mocks and merge strategies](https://terragrunt.gruntwork.io/docs/reference/hcl/blocks/#dependency).
+
+The `argocd_project_manifest` units use Terraform's `kubernetes_manifest`
+resource. Its provider queries the live Kubernetes API during planning to discover
+resource schemas, including Argo CD custom resources. Mock AKS outputs cannot
+replace that API: the mock host `https://example.invalid` deliberately does not
+resolve. Disabling refresh does not remove the schema-discovery requirement.
+
+From `infrastructure/azure/live/DEV-JKS/dev/uks`, after configuring the deployment
+prerequisites, exclude these units from the first infrastructure plan:
+
+```sh
+terragrunt run --all --filter '!**/argocd_project_manifest' plan
+```
+
+The filter excludes both domain manifest units and keeps AKS and its Argo CD
+extension in the plan. A successful infrastructure plan does not create the cluster
+or install the Argo CD custom resource definitions (CRDs). After applying the
+required upstream infrastructure, verify that AKS outputs contain the real API
+endpoint and credentials, that the API is reachable from the planning machine,
+and that Argo CD CRDs are installed. Then include the manifest units in a fresh
+plan:
+
+```sh
+terragrunt run --all plan
+```
+
 Apply requires real dependency outputs. A plan containing mock IDs is a preview;
 after applying upstream units, create a fresh downstream plan with real outputs
 before applying it. Do not apply a saved plan containing mock values.
@@ -217,10 +275,13 @@ or reordering entries never renumbers existing networks.
 The file derives `locals.address_spaces` from that list. This lookup map uses
 `subscription_name`, `environment`, `region_short`, and `domain_name` from the
 ancestor settings as keys, for example `DEV-JKS` / `dev` / `eus2` / `atlas`.
-The domain key is `atlas`, matching the domain directory name.
-The EUS2 allocation is `10.0.0.0/16`; UKS uses `10.1.0.0/16`. The UKS subnets
+The domain key matches the domain directory name, such as `atlas` or `intro`.
+Atlas uses `10.0.0.0/16` in EUS2 and `10.1.0.0/16` in UKS. The Atlas UKS subnets
 are `10.1.1.0/24` and `10.1.2.0/24` for AKS, and `10.1.6.0/24` for application
 integration.
+
+Intro uses `10.2.0.0/16` in development UKS under `DEV-JKS`. Its AKS subnets are
+`10.2.1.0/24` and `10.2.2.0/24`; application integration uses `10.2.6.0/24`.
 
 The VNet unit exposes the file through a direct `include "network_addresses"`
 block and reads `include.network_addresses.locals.address_spaces` using the

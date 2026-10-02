@@ -15,6 +15,13 @@ locals {
       region       = "uks"
       domain       = "atlas"
     },
+    {
+      cidr         = "10.2.0.0/16"
+      subscription = "DEV-JKS"
+      environment  = "dev"
+      region       = "uks"
+      domain       = "intro"
+    },
   ]
 
   by_subscription = {

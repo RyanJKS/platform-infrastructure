@@ -21,13 +21,10 @@ dependencies {
 dependency "aks" {
   config_path = "../aks_cluster"
 
-  mock_outputs = {
-    host                   = "https://example.invalid"
-    cluster_ca_certificate = ""
-    client_certificate     = ""
-    client_key             = ""
-  }
-  mock_outputs_merge_with_state = true
+  mock_outputs = include.root.locals.mocks.aks_cluster
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 generate "kubernetes_provider" {

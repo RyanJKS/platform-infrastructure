@@ -6,6 +6,9 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Fixed
 
+- Document excluding Argo CD manifest units from the first UKS infrastructure
+  plan because Kubernetes schema discovery requires a live API and installed CRDs.
+
 - Align the Azure VNet address map with the `domain_name` lookup key (`atlas`).
 
 - Use the Azure root's `domain_name` in platform units instead of the undefined
@@ -14,6 +17,13 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
   default `solution_name = null` instead of failing the parent-file lookup.
 
 ### Changed
+
+- Allocate `10.2.0.0/16` to the development UKS Intro VNet and move its AKS and
+  application integration subnets into that address space.
+
+- Centralise development UKS dependency mocks in Azure `_mocks/outputs.hcl`,
+  exposed through the cloud root. Restrict mocks to validation and planning,
+  preserve real state outputs, and use domain-specific solution settings.
 
 - Rename domain folders from `spoke-atlas/` to `atlas/` and settings from
   `spoke.hcl` to `domain.hcl` across AWS and Azure. Update inherited inputs,
