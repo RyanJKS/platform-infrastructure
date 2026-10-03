@@ -2,11 +2,11 @@
 
 ## Status and tools
 
-Deployment is **unconfigured**: there are no real units, selected modules,
-provider configurations, credentials, or remote backends. Do not plan a newly
-scaffolded unit until the prerequisites below are complete; without a backend it
-could use local state. This setup does not create resources, bootstrap backends,
-apply Terraform, or migrate state.
+Cloud deployments require configured credentials and remote backends. Do not
+plan a newly scaffolded unit until the prerequisites below are complete; without
+a backend it could use local state. The optional [Azure state bootstrap](azure-bootstrap.md)
+creates development state storage in DEV-HUB when run locally. Cloud roots do
+not provision backend storage automatically or migrate state.
 
 Use **Terragrunt v1.1.5**, pinned in `.terragrunt-version` and required by both
 cloud roots. Install the matching release for your platform and verify its
@@ -416,8 +416,10 @@ and review these separately for each cloud before adding deployable units:
 Provider and backend identities can differ; validate both. Do not commit
 credentials or storage access keys. Use short-lived credentials and cloud-native
 identity where practical. Backend owners must provision storage and access
-controls through a separately reviewed process. This repository does not
-bootstrap them. Terraform/provider version selection must precede choosing
+controls before workload deployment. Use the standalone [Azure state bootstrap](azure-bootstrap.md)
+to create development state storage in DEV-HUB; assign user and pipeline access
+separately. AWS backend provisioning remains external.
+Terraform/provider version selection must precede choosing
 backend-specific locking options (such as S3 lockfiles).
 
 Every unit must use a separate remote state key derived from its path relative

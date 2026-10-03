@@ -45,6 +45,10 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Added
 
+- Add a standalone local Terraform bootstrap under `scripts/azure-tfstate-bootstrap/`
+  for a DEV-HUB resource group, HNS-enabled ADLS Gen2 storage account, and private
+  state container, with editable locals and a local backend.
+
 - Centralise Azure remote module refs in `_envcommon/module-versions.hcl` with
   plain per-module locals exposed by direct includes in consuming units.
 - Add Azure subscription division labels (`JKS` and `HUB`), exposed through the

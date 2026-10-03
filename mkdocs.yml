@@ -3,6 +3,7 @@ site_description: "Main repository to hold multi cloud infrastructure provisione
 nav:
   - Home: index.md
   - Deployments: terragrunt.md
+  - Azure state bootstrap: azure-bootstrap.md
   - Azure pipelines: azure-pipelines.md
   - Azure groups: azure-groups.md
   - Architecture: architecture.md
