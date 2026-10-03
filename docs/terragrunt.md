@@ -526,6 +526,17 @@ The [Azure pipeline guide](azure-pipelines.md) describes the manual provisioning
 and deprovisioning workflows, target inputs, OIDC setup, and required approvals.
 Configure a real unit and remote backend before using them.
 
+## Clear Terragrunt caches
+
+With `just`, Bash, and `find` installed, run from the repository root:
+
+```sh
+just clean
+```
+
+This deletes all directories named `.terragrunt-cache` beneath `infrastructure/`.
+Terragrunt recreates its caches on the next run.
+
 ## Validation
 
 The root `.gitignore` holds repository-wide ignore rules, including the entire

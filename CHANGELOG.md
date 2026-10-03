@@ -4,6 +4,10 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ## Unreleased
 
+### Added
+
+- Add `just clean` to delete `.terragrunt-cache` directories beneath `infrastructure/`.
+
 ### Fixed
 
 - Document excluding Argo CD manifest units from the first UKS infrastructure
