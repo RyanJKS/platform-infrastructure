@@ -15,7 +15,7 @@ include "envcommon" {
 }
 
 dependency "solution_settings" {
-  config_path = "../solution_settings"
+  config_path = "../../solution_settings"
 
   mock_outputs = include.root.locals.mocks.solution_settings[include.root.locals.domain_name]
 
@@ -24,7 +24,7 @@ dependency "solution_settings" {
 }
 
 dependency "aks_cluster" {
-  config_path = "../aks_cluster"
+  config_path = "../cluster"
 
   mock_outputs = include.root.locals.mocks.aks_cluster
 

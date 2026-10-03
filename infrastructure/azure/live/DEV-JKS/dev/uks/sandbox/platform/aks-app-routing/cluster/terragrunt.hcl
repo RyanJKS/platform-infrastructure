@@ -15,7 +15,7 @@ include "envcommon" {
 }
 
 dependency "resource_group" {
-  config_path = "../resource_group"
+  config_path = "../../resource_group"
 
   mock_outputs = include.root.locals.mocks.resource_group
 
@@ -24,7 +24,7 @@ dependency "resource_group" {
 }
 
 dependency "solution_settings" {
-  config_path = "../solution_settings"
+  config_path = "../../solution_settings"
 
   mock_outputs = include.root.locals.mocks.solution_settings[include.root.locals.domain_name]
 
@@ -33,7 +33,7 @@ dependency "solution_settings" {
 }
 
 dependency "dns" {
-  config_path = "../dns"
+  config_path = "../../dns"
 
   mock_outputs = include.root.locals.mocks.dns
 

@@ -15,11 +15,11 @@ include "envcommon" {
 }
 
 dependencies {
-  paths = ["../aks_argocd_extension"]
+  paths = ["../argocd_extension"]
 }
 
 dependency "aks" {
-  config_path = "../aks_cluster"
+  config_path = "../cluster"
 
   mock_outputs = include.root.locals.mocks.aks_cluster
 
@@ -64,9 +64,9 @@ inputs = {
 
       source = {
         repoURL        = "https://github.com/RyanJKS/platform-gitops.git"
-        targetRevision = "main"
+        targetRevision = "dev/sandbox"
 
-        path = "clusters/azure/${include.root.locals.subscription_name}/${include.root.locals.environment}/${include.root.locals.region_short}/${include.root.locals.domain_name}/aks-shared/argocd"
+        path = "clusters/azure/${include.root.locals.subscription_name}/${include.root.locals.environment}/${include.root.locals.region_short}/${include.root.locals.domain_name}/aks-app-routing/argocd"
       }
 
       destination = {
