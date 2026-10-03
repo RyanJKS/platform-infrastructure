@@ -190,6 +190,11 @@ copy the unit files beside `unit.hcl`.
 
 ## First plan for the UKS platform
 
+The sandbox AKS unit is at `sandbox/platform/aks-app-routing/cluster` beneath
+`infrastructure/azure/live/DEV-JKS/dev/uks`. The sandbox platform RBAC unit
+references it through `../aks-app-routing/cluster`; `sandbox/platform/aks_cluster`
+does not contain a unit. The atlas AKS unit remains at `atlas/platform/aks_cluster`.
+
 Dependency blocks already define the execution order. `terragrunt run --all plan`
 does not apply upstream units or save their planned outputs to state. On a fresh
 stack, downstream units therefore need mock outputs to evaluate their inputs.

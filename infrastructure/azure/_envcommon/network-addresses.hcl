@@ -20,7 +20,7 @@ locals {
       subscription = "DEV-JKS"
       environment  = "dev"
       region       = "uks"
-      domain       = "intro"
+      domain       = "sandbox"
     },
   ]
 

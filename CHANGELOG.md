@@ -10,6 +10,8 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Fixed
 
+- Point sandbox platform RBAC's AKS dependency to `aks-app-routing/cluster`.
+
 - Document excluding Argo CD manifest units from the first UKS infrastructure
   plan because Kubernetes schema discovery requires a live API and installed CRDs.
 

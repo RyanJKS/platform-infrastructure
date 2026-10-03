@@ -10,7 +10,7 @@ locals {
   }
 
   solution_settings = {
-    for domain in ["atlas", "intro"] : domain => {
+    for domain in ["atlas", "sandbox"] : domain => {
       settings = {
         solution_name   = domain
         solution_slug   = domain

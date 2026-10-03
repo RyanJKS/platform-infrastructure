@@ -93,21 +93,22 @@ generate "imports_def" {
 EOF
 }
 
-remote_state {
-  backend = "azurerm"
-  config = {
-    subscription_id      = local.subscription_id
-    key                  = "${path_relative_to_include()}/terraform.tfstate"
-    resource_group_name  = local.tfstate_rg_name
-    storage_account_name = local.tfstate_sa_name
-    container_name       = "tfstate"
-    use_azuread_auth     = true
-  }
-  generate = {
-    path      = "backend.tf"
-    if_exists = "overwrite_terragrunt"
-  }
-}
+# Uncomment for remote_state
+# remote_state {
+#   backend = "azurerm"
+#   config = {
+#     subscription_id      = local.subscription_id
+#     key                  = "${path_relative_to_include()}/terraform.tfstate"
+#     resource_group_name  = local.tfstate_rg_name
+#     storage_account_name = local.tfstate_sa_name
+#     container_name       = "tfstate"
+#     use_azuread_auth     = true
+#   }
+#   generate = {
+#     path      = "backend.tf"
+#     if_exists = "overwrite_terragrunt"
+#   }
+# }
 
 
 inputs = merge(
