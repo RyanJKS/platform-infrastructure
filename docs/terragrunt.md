@@ -209,6 +209,8 @@ VNet subnet IDs, and Entra group IDs, plus the allowed commands. Solution settin
 are keyed by domain, so `atlas` and `intro` use their own names and tags.
 These fixtures describe development UKS only; add appropriate fixtures before
 using them in another environment or region.
+The VNet fixture includes `subnet_ids["aksnet-001"]` for AKS nodes and
+`subnet_ids["appsnet-001"]` for application integration.
 
 Keep dependency paths in each unit and reference the shared output schema:
 

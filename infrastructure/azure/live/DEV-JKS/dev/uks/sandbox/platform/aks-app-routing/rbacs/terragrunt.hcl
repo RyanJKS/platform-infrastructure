@@ -23,6 +23,15 @@ dependency "base_aad_groups" {
   mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
+dependency "vnet" {
+  config_path = "../../vnet"
+
+  mock_outputs = include.root.locals.mocks.vnet
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
+}
+
 dependency "dns" {
   config_path = "../../dns"
 
@@ -55,6 +64,12 @@ inputs = {
       principal_id         = dependency.aks_cluster.outputs.web_app_routing_identity[0].object_id
       type                 = "ServicePrincipal"
       role_definition_name = "DNS Zone Contributor"
+    },
+    aks_subnet_network = {
+      scope                = dependency.vnet.outputs.subnet_ids["aksnet-001"]
+      principal_id         = dependency.aks_cluster.outputs.identity[0].principal_id
+      type                 = "ServicePrincipal"
+      role_definition_name = "Network Contributor"
     }
   }
 

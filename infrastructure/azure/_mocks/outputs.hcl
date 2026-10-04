@@ -49,6 +49,7 @@ locals {
 
   vnet = {
     subnet_ids = {
+      aksnet-001  = "${local.resource_group_id}/providers/Microsoft.Network/virtualNetworks/mock-vnet/subnets/aksnet-001"
       appsnet-001 = "${local.resource_group_id}/providers/Microsoft.Network/virtualNetworks/mock-vnet/subnets/appsnet-001"
     }
   }

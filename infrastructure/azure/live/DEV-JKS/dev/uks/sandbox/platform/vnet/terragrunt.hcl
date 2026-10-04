@@ -83,7 +83,6 @@ inputs = {
       address_prefixes = ["10.2.2.0/24"]
     }
 
-
     appsnet-001 = {
       address_prefixes  = ["10.2.6.0/24"]
       service_endpoints = ["Microsoft.Storage"]

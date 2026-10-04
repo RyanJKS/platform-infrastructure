@@ -41,6 +41,20 @@ dependency "dns" {
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
+dependency "vnet" {
+  config_path = "../../vnet"
+
+  mock_outputs = include.root.locals.mocks.vnet
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
+}
+
+
+locals {
+  name_prefix = "approuting"
+}
+
 inputs = {
   # --------------------------------------------------------------------------------------------------------------------
   # Required input variables
@@ -61,7 +75,7 @@ inputs = {
 
   # Description: Optional resource name override. Defaults to settings.name_prefix followed by aks.
   # Type: string
-  # name = null
+  name = lower("${local.name_prefix}${include.root.locals.region_short}${include.root.locals.environment}aks")
 
   # Description: Optional Azure region override. Defaults to settings.region_long.
   # Type: string
@@ -87,6 +101,7 @@ inputs = {
     min_count            = 3
     max_count            = 5
     max_pods             = 30
+    vnet_subnet_id       = dependency.vnet.outputs.subnet_ids["aksnet-001"]
   }
 
   # Description: User-assigned identity resource IDs. An empty set uses a system-assigned identity.
