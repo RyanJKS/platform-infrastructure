@@ -42,7 +42,10 @@ within those boundaries.
 AWS and Azure require separate authentication and backend configuration. Moving
 or renaming any part of a unit path changes its derived state key; treat this as
 a state migration requiring a reviewed procedure, not a directory-only change.
-No state migration or backend bootstrapping is performed by this setup.
+The standalone [Azure state bootstrap](azure-bootstrap.md) under `scripts/`
+creates development state storage in DEV-HUB when run locally. It uses local
+state and is separate from Terragrunt units and pipeline execution. Cloud roots
+do not provision backend storage automatically or migrate state.
 
 ## Additional clouds
 

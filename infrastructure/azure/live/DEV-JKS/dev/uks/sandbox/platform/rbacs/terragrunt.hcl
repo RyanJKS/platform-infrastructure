@@ -19,7 +19,7 @@ dependency "base_aad_groups" {
 
   mock_outputs = include.root.locals.mocks.base_aad_groups
 
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.shared_platform_allowed_commands
   mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
@@ -28,25 +28,7 @@ dependency "resource_group" {
 
   mock_outputs = include.root.locals.mocks.resource_group
 
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
-  mock_outputs_merge_strategy_with_state  = "shallow"
-}
-
-dependency "dns" {
-  config_path = "../dns"
-
-  mock_outputs = include.root.locals.mocks.dns
-
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
-  mock_outputs_merge_strategy_with_state  = "shallow"
-}
-
-dependency "aks_cluster" {
-  config_path = "../aks_cluster"
-
-  mock_outputs = include.root.locals.mocks.aks_cluster
-
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.shared_platform_allowed_commands
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
@@ -69,13 +51,6 @@ inputs = {
       principal_id         = dependency.base_aad_groups.outputs.object_ids["ADMIN"]
       type                 = "Group"
       role_definition_name = "Contributor"
-    }
-    # required to allow app routing identity perms to manage records in DNS
-    aks_cluster_web_app_identity = {
-      scope                = dependency.dns.outputs.id
-      principal_id         = dependency.aks_cluster.outputs.web_app_routing_identity[0].object_id
-      type                 = "ServicePrincipal"
-      role_definition_name = "DNS Zone Contributor"
     }
   }
 

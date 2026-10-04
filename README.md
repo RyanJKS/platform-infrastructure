@@ -38,6 +38,9 @@ the full example tree. Review identity settings before deployment.
 
 ## Getting started
 
+For initial Azure state storage, run the standalone Terraform setup under
+`scripts/azure-tfstate-bootstrap/`; see the [Azure state bootstrap guide](docs/azure-bootstrap.md).
+
 Install **Terragrunt v1.1.5** (recorded in `.terragrunt-version`) and follow the
 [deployment guide](docs/terragrunt.md) to select a real module, configure cloud
 identity and an existing remote backend, and scaffold a unit. The Azure catalog

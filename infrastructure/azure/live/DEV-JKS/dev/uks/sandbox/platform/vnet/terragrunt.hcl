@@ -21,35 +21,20 @@ include "network_addresses" {
 
 dependency "resource_group" {
   config_path = "../resource_group"
-  mock_outputs = {
-    name     = "mock-resource-group"
-    location = "uksouth"
-  }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+
+  mock_outputs = include.root.locals.mocks.resource_group
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.shared_platform_allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "solution_settings" {
   config_path = "../solution_settings"
-  mock_outputs = {
-    settings = {
-      solution_name   = "atlas"
-      solution_slug   = "atlas"
-      name_prefix     = "atlasuksdev"
-      env             = "dev"
-      region_short    = "uks"
-      region_long     = "uksouth"
-      subscription_id = "00000000-0000-0000-0000-000000000000"
-      tenant_id       = "00000000-0000-0000-0000-000000000000"
-      client_id       = "00000000-0000-0000-0000-000000000000"
-      object_id       = "00000000-0000-0000-0000-000000000000"
-    }
-    tags = {
-      Environement = "dev"
-      Solution     = "Atlas"
-      Region       = "uksouth"
-    }
-  }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+
+  mock_outputs = include.root.locals.mocks.solution_settings[include.root.locals.domain_name]
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.shared_platform_allowed_commands
+  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
 inputs = {
@@ -92,15 +77,14 @@ inputs = {
   # dns_servers = []
   subnets = {
     aksnet-001 = {
-      address_prefixes = ["10.1.1.0/24"]
+      address_prefixes = ["10.2.1.0/24"]
     }
     aksnet-002 = {
-      address_prefixes = ["10.1.2.0/24"]
+      address_prefixes = ["10.2.2.0/24"]
     }
 
-
     appsnet-001 = {
-      address_prefixes  = ["10.1.6.0/24"]
+      address_prefixes  = ["10.2.6.0/24"]
       service_endpoints = ["Microsoft.Storage"]
 
       delegation = {

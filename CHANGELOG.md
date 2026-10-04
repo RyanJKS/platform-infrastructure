@@ -4,7 +4,16 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ## Unreleased
 
+### Added
+
+- Add `just clean` to delete `.terragrunt-cache` directories beneath `infrastructure/`.
+
 ### Fixed
+
+- Point sandbox platform RBAC's AKS dependency to `aks-app-routing/cluster`.
+
+- Document excluding Argo CD manifest units from the first UKS infrastructure
+  plan because Kubernetes schema discovery requires a live API and installed CRDs.
 
 - Align the Azure VNet address map with the `domain_name` lookup key (`atlas`).
 
@@ -14,6 +23,13 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
   default `solution_name = null` instead of failing the parent-file lookup.
 
 ### Changed
+
+- Allocate `10.2.0.0/16` to the development UKS Intro VNet and move its AKS and
+  application integration subnets into that address space.
+
+- Centralise development UKS dependency mocks in Azure `_mocks/outputs.hcl`,
+  exposed through the cloud root. Restrict mocks to validation and planning,
+  preserve real state outputs, and use domain-specific solution settings.
 
 - Rename domain folders from `spoke-atlas/` to `atlas/` and settings from
   `spoke.hcl` to `domain.hcl` across AWS and Azure. Update inherited inputs,
@@ -34,6 +50,10 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
   module placeholders. Update Azure workflow paths and state keys accordingly.
 
 ### Added
+
+- Add a standalone local Terraform bootstrap under `scripts/azure-tfstate-bootstrap/`
+  for a DEV-HUB resource group, HNS-enabled ADLS Gen2 storage account, and private
+  state container, with editable locals and a local backend.
 
 - Centralise Azure remote module refs in `_envcommon/module-versions.hcl` with
   plain per-module locals exposed by direct includes in consuming units.

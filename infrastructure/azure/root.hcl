@@ -1,6 +1,8 @@
 terragrunt_version_constraint = "= 1.1.5"
 
 locals {
+  mocks = read_terragrunt_config("${dirname(find_in_parent_folders("root.hcl"))}/_mocks/outputs.hcl").locals
+
   subscription_config = read_terragrunt_config(find_in_parent_folders("subscription.hcl"))
   environment_config  = read_terragrunt_config(find_in_parent_folders("env.hcl"))
   region_config       = read_terragrunt_config(find_in_parent_folders("region.hcl"))
@@ -33,6 +35,8 @@ locals {
   solution_name     = local.solution_config.locals.solution_name
 
   # Pre-provisioned
+  tfstate_rg_name = upper("${local.subscription_name}-TFSTATE-${local.region_short}-RG")
+  tfstate_sa_name = lower("${replace(local.subscription_name, "-", "")}tfstate${local.region_short}sa")
 
 }
 
@@ -88,6 +92,23 @@ generate "imports_def" {
     %{endfor}
 EOF
 }
+
+# Uncomment for remote_state
+# remote_state {
+#   backend = "azurerm"
+#   config = {
+#     subscription_id      = local.subscription_id
+#     key                  = "${path_relative_to_include()}/terraform.tfstate"
+#     resource_group_name  = local.tfstate_rg_name
+#     storage_account_name = local.tfstate_sa_name
+#     container_name       = "tfstate"
+#     use_azuread_auth     = true
+#   }
+#   generate = {
+#     path      = "backend.tf"
+#     if_exists = "overwrite_terragrunt"
+#   }
+# }
 
 
 inputs = merge(

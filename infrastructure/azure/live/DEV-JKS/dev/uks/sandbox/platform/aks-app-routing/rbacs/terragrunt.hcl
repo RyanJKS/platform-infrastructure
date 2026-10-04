@@ -15,32 +15,39 @@ include "envcommon" {
 }
 
 dependency "base_aad_groups" {
-  config_path = "../base_aad_groups"
+  config_path = "../../base_aad_groups"
 
-  mock_outputs = {
-    object_ids = {
-      READER = "11111111-1111-1111-1111-111111111111"
-      WRITER = "22222222-2222-2222-2222-222222222222"
-      ADMIN  = "33333333-3333-3333-3333-333333333333"
-    }
-  }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs = include.root.locals.mocks.base_aad_groups
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
-dependency "resource_group" {
-  config_path = "../resource_group"
-  mock_outputs = {
-    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/mock-resource-group"
-  }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+dependency "vnet" {
+  config_path = "../../vnet"
+
+  mock_outputs = include.root.locals.mocks.vnet
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "dns" {
-  config_path = "../dns"
+  config_path = "../../dns"
+
+  mock_outputs = include.root.locals.mocks.dns
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "aks_cluster" {
-  config_path = "../aks_cluster"
+  config_path = "../cluster"
+
+  mock_outputs = include.root.locals.mocks.aks_cluster
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 inputs = {
@@ -51,24 +58,18 @@ inputs = {
   # Description: Role assignments keyed by stable, caller-chosen names. Keys must be known at plan time; values may use dependency outputs.
   # Type: map
   assignments = {
-    platform_reader = {
-      scope                = dependency.resource_group.outputs.id
-      principal_id         = dependency.base_aad_groups.outputs.object_ids["READER"]
-      type                 = "Group"
-      role_definition_name = "Reader"
-    }
-    platform_owner = {
-      scope                = dependency.resource_group.outputs.id
-      principal_id         = dependency.base_aad_groups.outputs.object_ids["ADMIN"]
-      type                 = "Group"
-      role_definition_name = "Contributor"
-    }
     # required to allow app routing identity perms to manage records in DNS
     aks_cluster_web_app_identity = {
       scope                = dependency.dns.outputs.id
       principal_id         = dependency.aks_cluster.outputs.web_app_routing_identity[0].object_id
       type                 = "ServicePrincipal"
       role_definition_name = "DNS Zone Contributor"
+    },
+    aks_subnet_network = {
+      scope                = dependency.vnet.outputs.subnet_ids["aksnet-001"]
+      principal_id         = dependency.aks_cluster.outputs.identity[0].principal_id
+      type                 = "ServicePrincipal"
+      role_definition_name = "Network Contributor"
     }
   }
 
