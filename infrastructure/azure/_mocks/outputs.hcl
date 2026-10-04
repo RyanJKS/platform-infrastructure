@@ -1,7 +1,8 @@
 locals {
-  allowed_commands  = ["validate", "plan"]
-  zero_uuid         = "00000000-0000-0000-0000-000000000000"
-  resource_group_id = "/subscriptions/${local.zero_uuid}/resourceGroups/mock-resource-group"
+  allowed_commands                 = ["validate", "plan"]
+  shared_platform_allowed_commands = concat(local.allowed_commands, ["destroy"])
+  zero_uuid                        = "00000000-0000-0000-0000-000000000000"
+  resource_group_id                = "/subscriptions/${local.zero_uuid}/resourceGroups/mock-resource-group"
 
   resource_group = {
     id       = local.resource_group_id

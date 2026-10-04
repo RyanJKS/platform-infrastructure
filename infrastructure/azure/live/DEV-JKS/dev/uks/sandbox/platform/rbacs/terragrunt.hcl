@@ -19,7 +19,7 @@ dependency "base_aad_groups" {
 
   mock_outputs = include.root.locals.mocks.base_aad_groups
 
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.shared_platform_allowed_commands
   mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
@@ -28,16 +28,7 @@ dependency "resource_group" {
 
   mock_outputs = include.root.locals.mocks.resource_group
 
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
-  mock_outputs_merge_strategy_with_state  = "shallow"
-}
-
-dependency "dns" {
-  config_path = "../dns"
-
-  mock_outputs = include.root.locals.mocks.dns
-
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.shared_platform_allowed_commands
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
