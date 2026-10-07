@@ -10,20 +10,10 @@ include "root" {
 
 dependency "resource_group" {
   config_path = "../resource_group"
-
-  mock_outputs = include.root.locals.mocks.resource_group
-
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.shared_platform_allowed_commands
-  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "solution_settings" {
   config_path = "../solution_settings"
-
-  mock_outputs = include.root.locals.mocks.solution_settings[include.root.locals.domain_name]
-
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.shared_platform_allowed_commands
-  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
 inputs = {
