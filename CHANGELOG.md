@@ -10,6 +10,8 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Fixed
 
+- Correct sandbox container registry dependency paths to sibling platform units
+  and the Log Analytics solution settings output reference.
 - Point sandbox platform RBAC's AKS dependency to `aks-app-routing/cluster`.
 
 - Document excluding Argo CD manifest units from the first UKS infrastructure

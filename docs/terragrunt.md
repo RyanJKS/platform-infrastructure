@@ -190,6 +190,22 @@ copy the unit files beside `unit.hcl`.
 
 ## First plan for the UKS platform
 
+To apply the sandbox platform units while excluding all AKS variants, run from
+`infrastructure/azure/live/DEV-JKS/dev/uks/sandbox/platform` after configuring
+the deployment prerequisites:
+
+```sh
+terragrunt run --all --filter '!./aks-*/**' -- apply
+```
+
+The filter paths are relative to this working directory. Direct platform units
+such as `container_registry` reference their sibling units with
+`../solution_settings` and `../resource_group`. Units nested beneath an AKS
+variant use `../../solution_settings` and `../../resource_group` instead. If
+Terragrunt reports a missing `sandbox/solution_settings/terragrunt.hcl` or
+`sandbox/resource_group/terragrunt.hcl`, check the failing unit's dependency
+paths; both units live under `sandbox/platform/`.
+
 The sandbox AKS unit is at `sandbox/platform/aks-app-routing/cluster` beneath
 `infrastructure/azure/live/DEV-JKS/dev/uks`. The sandbox platform RBAC unit
 references it through `../aks-app-routing/cluster`; `sandbox/platform/aks_cluster`
