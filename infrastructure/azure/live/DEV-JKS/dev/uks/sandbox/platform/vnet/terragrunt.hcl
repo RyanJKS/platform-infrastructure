@@ -83,6 +83,22 @@ inputs = {
       address_prefixes = ["10.2.2.0/24"]
     }
 
+    agwsnet-001 = {
+      address_prefixes = ["10.2.3.0/24"]
+
+      delegation = {
+        name = "application-gateway-delegation"
+
+        service_delegation = {
+          name = "Microsoft.Network/applicationGateways"
+
+          actions = [
+            "Microsoft.Network/virtualNetworks/subnets/join/action"
+          ]
+        }
+      }
+    }
+
     appsnet-001 = {
       address_prefixes  = ["10.2.6.0/24"]
       service_endpoints = ["Microsoft.Storage"]
