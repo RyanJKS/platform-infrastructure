@@ -35,7 +35,7 @@ inputs = {
 
   # Description: Shared solution settings. Explicit module inputs take precedence over defaults.
   # Type: object
-  settings = dependency.solution_settings.ouputs.settings
+  settings = dependency.solution_settings.outputs.settings
 
   # Description: The name of the existing resource group.
   # Type: string

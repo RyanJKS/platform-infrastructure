@@ -10,11 +10,11 @@ include "root" {
 }
 
 dependency "solution_settings" {
-  config_path = "../../solution_settings"
+  config_path = "../solution_settings"
 }
 
 dependency "resource_group" {
-  config_path = "../../resource_group"
+  config_path = "../resource_group"
 }
 
 inputs = {
