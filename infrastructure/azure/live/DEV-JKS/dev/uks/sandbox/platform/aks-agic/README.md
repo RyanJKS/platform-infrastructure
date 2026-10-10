@@ -136,3 +136,21 @@ spec:
     spec:
       serviceAccountName: external-dns
 ```
+
+
+## Terraform-owned Argo CD
+
+`argocd_helm_manifest` reads the GitOps cluster's Helm release definition and its
+ordered catalog/Azure/cluster values. `argocd_project_manifest` reads the cluster's
+concrete `root_projects.yaml`, managing the seed projects before the root
+Application. Terraform owns the installation and seed; Argo CD owns child apps.
+
+Set repository URLs in [repo-urls.hcl](../../../../../../../_envcommon/repo-urls.hcl), or override the GitOps URL with
+`GITOPS_REPO_URL`. `GITOPS_DIR` defaults to the sibling `platform-gitops` checkout.
+Each Argo CD unit declares its cluster path locally.
+Both generated providers declare Azure CLI authentication through `kubelogin` directly because local AKS
+accounts are disabled. Install the Helm unit before planning the seed unit.
+
+See [Argo CD bootstrap](../../../../../../../../../docs/terragrunt.md#aks-agic-argo-cd-bootstrap)
+for checkout variables, credentials, input paths, apply stages, and existing state
+ownership.
