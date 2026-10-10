@@ -10,6 +10,19 @@ Record notable changes here. Group release entries under Added, Changed, Fixed, 
 
 ### Fixed
 
+- Create sandbox AGIC control-plane subnet and kubelet permissions in
+  `cluster_identity_rbacs` before AKS, instead of waiting for downstream RBAC.
+- Order sandbox Application Gateway creation after the gateway subnet NSG apply
+  so the required v2 management-port rules exist before Azure validates the gateway.
+- Fix sandbox AGIC planning by correcting dependency paths and group output
+  lookups, adding the registry dependency and matching planning mocks, and
+  removing the gateway's dependency on the cluster-federated AGIC identity.
+- Align AGIC bootstrap inputs with the modules: use a flat frontend port map,
+  `add_public_ip`, and `null` for unconfigured cluster KMS.
+- Point the sandbox AGIC RBAC group dependency to `../cluster_ad_groups` instead
+  of duplicating the AKS cluster dependency path.
+- Omit sandbox container registry network rules with `null` so the default Basic
+  SKU passes the module's Premium-feature precondition.
 - Correct sandbox container registry dependency paths to sibling platform units
   and the Log Analytics solution settings output reference.
 - Point sandbox platform RBAC's AKS dependency to `aks-app-routing/cluster`.

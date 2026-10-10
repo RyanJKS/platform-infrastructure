@@ -206,6 +206,82 @@ Terragrunt reports a missing `sandbox/solution_settings/terragrunt.hcl` or
 `sandbox/resource_group/terragrunt.hcl`, check the failing unit's dependency
 paths; both units live under `sandbox/platform/`.
 
+The sandbox `container_registry` unit uses the module's default `Basic` SKU and
+sets `network_rule_set = null` to omit network rules. An empty object (`{}`) is
+not equivalent to `null`: the module fills in `default_action = "Deny"` and an
+empty IP allow list, which requires `Premium` and denies public access. To
+configure network rules, explicitly select `sku = "Premium"` and review the
+default action and IP allow list before applying.
+
+Within `sandbox/platform/aks-agic/rbacs`, the `aks_cluster` dependency points to
+`../cluster`, while `cluster_ad_groups` points to `../cluster_ad_groups`. Keep
+these paths distinct so each role assignment consumes outputs from the correct
+unit.
+
+The AGIC cluster reads its administrator group from
+`dependency.cluster_ad_groups.outputs.object_id["AKS-AGIC-ADMIN"]`. The group
+module exposes `object_id` as a map; it does not expose `object_ids`. Its
+Application Gateway dependency points to the sibling `../application_gateway`.
+The gateway does not attach the AGIC workload identity, so it can be planned
+before the cluster. The AGIC identity's federation then uses the cluster's OIDC
+issuer. Attaching that identity to the gateway would create a dependency cycle.
+If the gateway later needs Key Vault certificates, use a separate identity
+without a cluster dependency.
+
+The `cluster_identity_rbacs` unit grants the control-plane identity
+`Network Contributor` on the AKS node subnet and `Managed Identity Operator`
+on the kubelet identity resource. It depends only on the VNet and the two
+identities. The cluster declares an ordering dependency on this unit so these
+permissions exist before Azure creates AKS. The remaining `rbacs` assignments
+run after the cluster and workload identities exist. Keeping the prerequisite
+roles in that downstream unit prevents a fresh cluster from being created and
+causes `CustomKubeletIdentityMissingPermissionError`.
+
+When applying individual units, apply `cluster_identity_rbacs` before `cluster`.
+If AKS still reports a missing permission after the role assignment succeeds,
+allow Azure RBAC propagation before retrying. A successful plan does not prove
+that Azure has activated the permissions required by cluster creation.
+
+For an existing deployment that tracks these roles in the `rbacs` state, transfer
+the state ownership of `azurerm_role_assignment.this["controlplane_subnet"]` and
+`azurerm_role_assignment.this["controlplane_kubelet"]` to the new
+`cluster_identity_rbacs` state before applying this split. Preserve the existing
+Azure role assignment IDs and review both plans for unintended role deletion or
+duplicate creation. This migration is not needed when the old unit has no state.
+
+The gateway also declares an ordering dependency on `../agwsnet_nsg`. During a
+Terragrunt run across all units, this waits for both the subnet association and
+all NSG rules to finish before creating the gateway. Application Gateway v2
+requires inbound TCP ports `65200-65535` from the `GatewayManager` service tag;
+the allow rule has priority `120`, ahead of the catch-all deny at `200`. Creating
+the gateway while these rules are still being applied can fail with
+`ApplicationGatewaySubnetInboundTrafficBlockedByNetworkSecurityGroup` even
+when the final NSG configuration is correct. After the NSG apply succeeds,
+retry the gateway apply. When applying individual units, apply `agwsnet_nsg`
+before `application_gateway`; the ordering dependency is used by runs across
+all units.
+
+The gateway bootstrap uses `add_public_ip = true` and a flat port map,
+`frontend_ports = { bootstrap-http = 80 }`. The cluster sets
+`key_management_service = null` until a Key Vault key is configured. An empty
+object does not supply the required `key_vault_key_id`.
+
+To plan the AGIC units, run from
+`infrastructure/azure/live/DEV-JKS/dev/uks/sandbox/platform/aks-agic` after
+configuring cloud credentials and remote state access:
+
+```sh
+terragrunt run --all -- plan -input=false
+```
+
+AGIC dependencies use the shared mock outputs for validation and planning when
+real outputs are unavailable. The fixtures include managed identity IDs and
+principals, the group module's `object_id` map, the gateway, registry, Log
+Analytics workspace, OIDC issuer, and `agwsnet-001` subnet. The AKS fixture also
+includes the control-plane identity consumed by app-routing RBAC. These fixtures
+do not create upstream resources or make a saved plan suitable for applying; create a
+fresh downstream plan after the upstream resources have real state outputs.
+
 The sandbox AKS unit is at `sandbox/platform/aks-app-routing/cluster` beneath
 `infrastructure/azure/live/DEV-JKS/dev/uks`. The sandbox platform RBAC unit
 references it through `../aks-app-routing/cluster`; `sandbox/platform/aks_cluster`
