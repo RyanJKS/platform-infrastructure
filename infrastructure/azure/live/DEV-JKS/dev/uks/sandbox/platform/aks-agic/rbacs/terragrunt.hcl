@@ -23,15 +23,6 @@ dependency "base_aad_groups" {
   mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
-dependency "vnet" {
-  config_path = "../../vnet"
-
-  mock_outputs = include.root.locals.mocks.vnet
-
-  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
-  mock_outputs_merge_strategy_with_state  = "shallow"
-}
-
 dependency "dns" {
   config_path = "../../dns"
 
@@ -39,6 +30,10 @@ dependency "dns" {
 
   mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
   mock_outputs_merge_strategy_with_state  = "shallow"
+}
+
+dependency "vnet" {
+  config_path = "../../vnet"
 }
 
 dependency "aks_cluster" {
@@ -52,34 +47,74 @@ dependency "aks_cluster" {
 
 dependency "resource_group" {
   config_path = "../../resource_group"
+
+  mock_outputs = include.root.locals.mocks.resource_group
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
+}
+
+dependency "container_registry" {
+  config_path = "../../container_registry"
+
+  mock_outputs = include.root.locals.mocks.container_registry
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "application_gateway" {
   config_path = "../application_gateway"
+
+  mock_outputs = include.root.locals.mocks.application_gateway
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "cluster_ad_groups" {
-  config_path = "../cluster"
+  config_path = "../cluster_ad_groups"
+
+  mock_outputs = include.root.locals.mocks.cluster_ad_groups
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
 dependency "agic_uami" {
   config_path = "../agic_uami"
+
+  mock_outputs = include.root.locals.mocks.managed_identity
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "certmanager_uami" {
   config_path = "../certmanager_uami"
-}
 
-dependency "controlplane_uami" {
-  config_path = "../controlplane_uami"
+  mock_outputs = include.root.locals.mocks.managed_identity
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "externaldns_uami" {
   config_path = "../externaldns_uami"
+
+  mock_outputs = include.root.locals.mocks.managed_identity
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "kubelet_uami" {
   config_path = "../kubelet_uami"
+
+  mock_outputs = include.root.locals.mocks.managed_identity
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 inputs = {
@@ -93,22 +128,9 @@ inputs = {
     # # Grants the admin group full Kubernetes API access across the cluster
     aks_cluster_admin = {
       scope                = dependency.aks_cluster.outputs.id
-      principal_id         = dependency.cluster_ad_groups.outputs.object_ids["AKS-AGIC-ADMIN"]
+      principal_id         = dependency.cluster_ad_groups.outputs.object_id["AKS-AGIC-ADMIN"]
       type                 = "Group"
       role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
-    },
-    controlplane_subnet = {
-      scope                = dependency.vnet.outputs.subnet_ids["aksnet-001"]
-      principal_id         = dependency.controlplane_uami.outputs.principal_id
-      type                 = "ServicePrincipal"
-      role_definition_name = "Network Contributor"
-    },
-    # Allows AKS to assign that identity to its nodes
-    controlplane_kubelet = {
-      scope                = dependency.kubelet_uami.outputs.id
-      principal_id         = dependency.controlplane_uami.outputs.principal_id
-      type                 = "ServicePrincipal"
-      role_definition_name = "Managed Identity Operator"
     },
     # Allows kublet for each pod to pull images!
     kubelet_acr = {
@@ -116,6 +138,12 @@ inputs = {
       principal_id         = dependency.kubelet_uami.outputs.principal_id
       type                 = "ServicePrincipal"
       role_definition_name = "AcrPull"
+    },
+    agic_uami_subnet = {
+      scope                = dependency.vnet.outputs.subnet_ids["agwsnet-001"]
+      principal_id         = dependency.agic_uami.outputs.principal_id
+      type                 = "ServicePrincipal"
+      role_definition_name = "Network Contributor"
     },
     # Both RBACS are required for agic uami as per docs: https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-existing
     agic_agw = {

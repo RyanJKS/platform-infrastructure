@@ -60,9 +60,9 @@ inputs = {
   # Type: string
   # network_rule_bypass_option = "AzureServices"
 
-  # Description: Optional Premium network rules with an Allow or Deny default and IPv4 CIDR allow rules.
+  # Description: Optional Premium network rules with an Allow or Deny default and IPv4 CIDR allow rules. Use null to omit network rules for Basic or Standard.
   # Type: object
-  network_rule_set = {}
+  network_rule_set = null
 
   # Description: Enable dedicated data endpoints. Requires Premium.
   # Type: bool
@@ -78,7 +78,7 @@ inputs = {
 
   # Description: Optional registry identity. UserAssigned types require identity_ids. This identity does not grant clients access to images.
   # Type: object
-  identity = {}
+  identity = null
 
   # Description: Optional Premium replicas in distinct Azure regions other than settings.region_long.
   # Type: list

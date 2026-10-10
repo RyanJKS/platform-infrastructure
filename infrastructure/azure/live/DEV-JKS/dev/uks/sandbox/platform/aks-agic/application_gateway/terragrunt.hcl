@@ -9,20 +9,36 @@ include "root" {
   expose = true
 }
 
+# Wait for the required NSG rules and subnet association before creating the gateway.
+dependencies {
+  paths = ["../agwsnet_nsg"]
+}
+
 dependency "solution_settings" {
   config_path = "../../solution_settings"
+
+  mock_outputs = include.root.locals.mocks.solution_settings[include.root.locals.domain_name]
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
 dependency "resource_group" {
   config_path = "../../resource_group"
+
+  mock_outputs = include.root.locals.mocks.resource_group
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "vnet" {
   config_path = "../../vnet"
-}
 
-dependency "agic_uami" {
-  config_path = "../agic_uami"
+  mock_outputs = include.root.locals.mocks.vnet
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
 inputs = {
@@ -47,7 +63,7 @@ inputs = {
   frontend_ip_configurations = {}
 
   # Type: bool
-  add_public_ip_address = true
+  add_public_ip = true
 
   # Type: string
   public_ip_configuration_name = "public"
@@ -55,9 +71,7 @@ inputs = {
   # Description: Frontend TCP ports keyed by name.
   # Type: map
   frontend_ports = {
-    bootstrap_ports = {
-      bootstrap-http = 80 # initial configs. To be managed by AGIC
-    }
+    bootstrap-http = 80 # Initial configuration managed by AGIC after bootstrap.
   }
 
   # Description: Backend pools keyed by name. Empty pools can be populated later.
@@ -152,7 +166,7 @@ inputs = {
 
   # Description: User-assigned identity resource IDs, required for Key Vault certificates. Permissions remain caller-managed.
   # Type: set
-  identity_ids = [dependency.agic_uami.outputs.id]
+  identity_ids = []
 
   # Description: Existing WAF policy resource ID. Requires WAF_v2.
   # Type: string

@@ -14,6 +14,11 @@ include "envcommon" {
   expose = true
 }
 
+# Azure requires the control-plane permissions before accepting cluster creation.
+dependencies {
+  paths = ["../cluster_identity_rbacs"]
+}
+
 dependency "resource_group" {
   config_path = "../../resource_group"
 
@@ -47,22 +52,22 @@ dependency "vnet" {
   mock_outputs = include.root.locals.mocks.vnet
 
   mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
-  mock_outputs_merge_strategy_with_state  = "shallow"
+  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
 dependency "log_analytics" {
   config_path = "../../log_analytics"
 
-  mock_outputs = include.root.locals.mocks.vnet
+  mock_outputs = include.root.locals.mocks.log_analytics
 
   mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "application_gateway" {
-  config_path = "../../application_gateway"
+  config_path = "../application_gateway"
 
-  mock_outputs = include.root.locals.mocks.vnet
+  mock_outputs = include.root.locals.mocks.application_gateway
 
   mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
   mock_outputs_merge_strategy_with_state  = "shallow"
@@ -71,7 +76,7 @@ dependency "application_gateway" {
 dependency "controlplane_uami" {
   config_path = "../controlplane_uami"
 
-  mock_outputs = include.root.locals.mocks.vnet
+  mock_outputs = include.root.locals.mocks.managed_identity
 
   mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
   mock_outputs_merge_strategy_with_state  = "shallow"
@@ -80,7 +85,7 @@ dependency "controlplane_uami" {
 dependency "kubelet_uami" {
   config_path = "../kubelet_uami"
 
-  mock_outputs = include.root.locals.mocks.vnet
+  mock_outputs = include.root.locals.mocks.managed_identity
 
   mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
   mock_outputs_merge_strategy_with_state  = "shallow"
@@ -89,10 +94,10 @@ dependency "kubelet_uami" {
 dependency "cluster_ad_groups" {
   config_path = "../cluster_ad_groups"
 
-  mock_outputs = include.root.locals.mocks.vnet
+  mock_outputs = include.root.locals.mocks.cluster_ad_groups
 
   mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
-  mock_outputs_merge_strategy_with_state  = "shallow"
+  mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
 locals {
@@ -154,7 +159,7 @@ inputs = {
 
   # Description: Microsoft Entra group object IDs for cluster administrators.
   # Type: set
-  admin_group_object_ids = [dependency.cluster_ad_groups["AKS-AGIC-ADMIN"].object_id]
+  admin_group_object_ids = [dependency.cluster_ad_groups.outputs.object_id["AKS-AGIC-ADMIN"]]
 
   # Description: Whether to create a private API server endpoint.
   # Type: bool
@@ -220,7 +225,7 @@ inputs = {
 
   # Description: Kubernetes secret encryption with an existing Key Vault key. Null disables KMS. Key permissions and private connectivity are caller-managed.
   # Type: object
-  key_management_service = {}
+  key_management_service = null
 
   # Description: Container Insights with an existing Log Analytics workspace. Null disables the addon.
   # Type: object

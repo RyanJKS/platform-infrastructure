@@ -44,6 +44,17 @@ It means: **“Allow AGIC, acting as this identity, to assign this UAMI to an Az
 | **AGIC**                  | **Contributor**               | Your **Application Gateway resource ID**      | Updates gateway listeners, routing rules, backend pools and probes |
 | **AGIC**                  | **Reader**                    | Resource group containing Application Gateway | Reads surrounding resource information                             |
 
+## Cluster creation permissions
+
+`cluster_identity_rbacs` assigns the control-plane identity `Network Contributor`
+on the AKS node subnet and `Managed Identity Operator` on the kubelet identity.
+These roles must exist before creating AKS. The cluster depends on this unit;
+the downstream `rbacs` unit manages roles that require the cluster or workload
+identities. If applying individual units, apply `cluster_identity_rbacs` first.
+Azure RBAC propagation can delay recognition of a newly created assignment.
+See the [deployment guide](../../../../../../../../../docs/terragrunt.md)
+for the apply order and state ownership changes for existing deployments.
+
 ## Federation
 
 **“Federation handles authentication” means it lets the pod prove to Microsoft Entra ID that it is allowed to act as a particular UAMI.** Azure RBAC then determines what that identity can do.
