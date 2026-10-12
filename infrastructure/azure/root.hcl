@@ -1,8 +1,6 @@
 terragrunt_version_constraint = "= 1.1.5"
 
 locals {
-  repo_urls = read_terragrunt_config("${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/repo-urls.hcl").locals
-
   mocks = read_terragrunt_config("${dirname(find_in_parent_folders("root.hcl"))}/_mocks/outputs.hcl").locals
 
   subscription_config = read_terragrunt_config(find_in_parent_folders("subscription.hcl"))
@@ -44,7 +42,7 @@ locals {
 
 catalog {
   urls = [
-    "${local.repo_urls.platform_blueprints_github_url}//terraform/azure",
+    "${read_terragrunt_config("${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/repo-urls.hcl").locals.platform_blueprints_github_url}//terraform/azure",
     # Local catalogs require the Git root; .terragrunt-catalog-ignore scopes discovery.
     get_repo_root(),
   ]

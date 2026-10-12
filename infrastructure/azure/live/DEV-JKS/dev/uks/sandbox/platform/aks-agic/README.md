@@ -140,17 +140,33 @@ spec:
 
 ## Terraform-owned Argo CD
 
-`argocd_helm_manifest` reads the GitOps cluster's Helm release definition and its
-ordered catalog/Azure/cluster values. `argocd_project_manifest` reads the cluster's
-concrete `root_projects.yaml`, managing the seed projects before the root
-Application. Terraform owns the installation and seed; Argo CD owns child apps.
+`argocd_helm_manifest` installs the minimal official chart when
+`ARGOCD_BOOTSTRAP=true`; routine `run --all` operations exclude this unit.
+`argocd_application_manifest` defines the `all-apps` root Application inline in
+the built-in `default` AppProject and points it at the GitOps cluster path. The
+unit passes one manifest object to the shared Kubernetes manifest module.
 
-Set repository URLs in [repo-urls.hcl](../../../../../../../_envcommon/repo-urls.hcl), or override the GitOps URL with
-`GITOPS_REPO_URL`. `GITOPS_DIR` defaults to the sibling `platform-gitops` checkout.
-Each Argo CD unit declares its cluster path locally.
-Both generated providers declare Azure CLI authentication through `kubelogin` directly because local AKS
-accounts are disabled. Install the Helm unit before planning the seed unit.
+Set repository URLs in
+[repo-urls.hcl](../../../../../../../_envcommon/repo-urls.hcl). The root Application
+tracks `dev/sandbox`; publish the cluster overlay to that branch before syncing.
+No sibling checkout, `GITOPS_DIR`, or `GITOPS_REF` is required by these units.
 
-See [Argo CD bootstrap](../../../../../../../../../docs/terragrunt.md#aks-agic-argo-cd-bootstrap)
-for checkout variables, credentials, input paths, apply stages, and existing state
-ownership.
+Install Helm before planning the root Application on a new cluster:
+
+```sh
+(cd argocd_helm_manifest && ARGOCD_BOOTSTRAP=true terragrunt run -- apply)
+(cd argocd_application_manifest && terragrunt run -- apply)
+```
+
+The Application unit depends on Helm for Terragrunt ordering. Before plan or
+apply, a hook waits up to 120 seconds for the Application CRD to become
+established. The hook uses a generated kubeconfig with the same AKS endpoint,
+CA certificate, and `kubelogin` authentication as Terraform; it does not use the
+current kubectl context. Install `kubectl`, `kubelogin`, and Azure CLI, and
+sign in with the deployment identity. If the CRD is missing, the hook reports
+the bootstrap command before Terraform tries to discover the Application schema.
+
+Terraform owns the root Application. Follow the documented Helm ownership
+handoff before Argo CD manages its own installation and runtime resources. See
+[Argo CD bootstrap](../../../../../../../../../docs/terragrunt.md#aks-agic-argo-cd-bootstrap)
+for prerequisites, apply stages, and existing state ownership.

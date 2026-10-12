@@ -331,7 +331,7 @@ Terragrunt reads real outputs when available. See the Terragrunt references for
 [reading shared configuration](https://terragrunt.gruntwork.io/docs/reference/hcl/functions/#read_terragrunt_config)
 and [dependency mocks and merge strategies](https://terragrunt.gruntwork.io/docs/reference/hcl/blocks/#dependency).
 
-The `argocd_project_manifest` units use Terraform's `kubernetes_manifest`
+The project and application manifest units use Terraform's `kubernetes_manifest`
 resource. Its provider queries the live Kubernetes API during planning to discover
 resource schemas, including Argo CD custom resources. Mock AKS outputs cannot
 replace that API: the mock host `https://example.invalid` deliberately does not
@@ -341,7 +341,7 @@ From `infrastructure/azure/live/DEV-JKS/dev/uks`, after configuring the deployme
 prerequisites, exclude these units from the first infrastructure plan:
 
 ```sh
-terragrunt run --all --filter '!**/argocd_project_manifest' plan
+terragrunt run --all --filter '!**/argocd_*_manifest' plan
 ```
 
 The filter excludes both domain manifest units and keeps AKS and its Argo CD
@@ -371,140 +371,120 @@ error first, including any missing address allocation described below.
 ```hcl
 locals {
   platform_blueprints_github_url = "git@github.com:RyanJKS/platform-blueprints.git"
-  platform_gitops_github_url     = get_env("GITOPS_REPO_URL", "https://github.com/RyanJKS/platform-gitops.git")
+  platform_gitops_github_url     = "https://github.com/RyanJKS/platform-gitops.git"
 }
 ```
 
-The Azure `root.hcl` exposes these as `repo_urls`. A unit that exposes its root
-include can use them in its module source:
+The GitOps repository is public. Use HTTPS for the URL Argo CD receives so the
+repo-server can fetch it without SSH credentials. Terraform's SSH authentication
+for module downloads is separate from Argo CD repository authentication. After
+changing this URL, plan and apply `argocd_application_manifest` to update the live
+root Application.
+
+Azure units expose this shared file directly, alongside the root include and
+the `envcommon` include for module versions. Each shared file needs its own include
+label, as with the VNet's `network_addresses` include:
 
 ```hcl
+include "repo_urls" {
+  path   = "${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/repo-urls.hcl"
+  expose = true
+}
+
 terraform {
-  source = "${include.root.locals.repo_urls.platform_blueprints_github_url}//terraform/shared/helm_release?ref=${urlencode(include.envcommon.locals.helm_release)}"
+  source = "${include.repo_urls.locals.platform_blueprints_github_url}//terraform/shared/helm_release?ref=${urlencode(include.envcommon.locals.helm_release)}"
 }
 ```
 
-The Azure catalog discovery URL uses the same Blueprint repository setting. Keep
-repository locations here and version pins in the existing version configuration.
+Read repository locations through `include.repo_urls.locals`, not through root
+locals. The Azure root reads the same file directly for catalog discovery only;
+it does not expose repository URLs to units. Keep repository locations here and
+version pins in the existing version configuration.
 
 ## AKS AGIC Argo CD bootstrap
 
-The sandbox cluster keeps Argo CD setup in two Terragrunt units under
+The sandbox uses two units under
 `infrastructure/azure/live/DEV-JKS/dev/uks/sandbox/platform/aks-agic/`:
 
-- `argocd_helm_manifest` installs the official Argo CD chart through the shared
-  `helm_release` module. The existing unit directory name is retained to preserve
-  its backend state key.
-- `argocd_project_manifest` reads the GitOps cluster's `root_projects.yaml` and
-  creates both seed AppProjects, then the `all-apps` Application. Its generated
-  Terraform wrapper calls the shared single-resource `kubernetes_manifest` module
-  once per item. Projects finish before the Application is applied.
+1. `argocd_helm_manifest` installs the minimal official `argo-cd` chart. The
+   release name and namespace are `argocd`; the repository and chart version
+   `10.9.0` are hardcoded in the unit. It uses chart defaults, creates the
+   namespace, waits for readiness, and has a 600-second timeout. It reads no
+   GitOps runtime values.
+2. `argocd_application_manifest` defines `all-apps` inline using the built-in
+   `default` AppProject, branch `dev/sandbox`, and path
+   `clusters/azure/DEV-JKS/dev/uks/sandbox/aks-agic`. Automatic self-heal is
+   enabled, pruning is disabled, and no separate root Application YAML is read.
+   The unit uses the shared single-resource `kubernetes_manifest` module.
 
-Both read shared repository URLs exposed through the Azure root configuration.
-Set `platform_blueprints_github_url` and `platform_gitops_github_url` in
-`infrastructure/azure/_envcommon/repo-urls.hcl`. Azure module sources use
-`include.root.locals.repo_urls.platform_blueprints_github_url`; module refs stay in
-`module-versions.hcl` or the existing unit settings. The GitOps URL defaults to the
-value in that file and can still be overridden with `GITOPS_REPO_URL`.
+The Application unit depends on Helm for Terragrunt ordering. The Helm unit is
+excluded from ordinary `run --all` operations and its direct
+plan/apply/destroy/import/refresh commands are guarded. Set
+`ARGOCD_BOOTSTRAP=true` only for installation or reviewed recovery. Keep it unset
+after the intended self-management child adopts the installation. Terraform
+continues owning the root Application, while runtime chart configuration lives
+in GitOps. Publish the cluster overlay before syncing the root.
 
-Set `GITOPS_DIR` to the absolute GitOps checkout path; each Argo CD unit defaults
-to the sibling `platform-gitops` repository and declares its cluster path locally.
-Terragrunt reads local files and does not clone the configuration repository.
-The GitOps URL updates the root's Git source and the bootstrap project's matching
-repository permission. The restricted `default` project remains restricted. Keep
-child Application repository URLs aligned when changing repositories.
+Repository URLs come from `infrastructure/azure/_envcommon/repo-urls.hcl`.
+`platform_blueprints_github_url` selects module sources;
+`platform_gitops_github_url` sets the root Application's Git URL. No local GitOps
+checkout, `GITOPS_DIR`, or `GITOPS_REF` is required by these units. Blueprint module
+refs remain in `_envcommon/module-versions.hcl`; the root Application tracks
+`dev/sandbox`. Configure Argo CD repository credentials if the GitOps repository
+is private.
 
-The Helm unit reads:
+Follow the GitOps `docs/bootstrap.md` Helm ownership handoff before enabling
+self-management: remove `helm_release.this` from Terraform state without
+destroying the live release, then enable the child Application. Do not use
+Terraform destroy to relinquish ownership. If an earlier seed or project unit
+was applied, review its existing state and ownership before changing units.
+Terraform moved blocks cannot transfer resources between different state files.
+This change does not modify existing state or delete an existing AppProject.
 
-```text
-clusters/azure/DEV-JKS/dev/uks/sandbox/aks-agic/platform/argocd/helm_release.yaml
-```
+### AKS authentication and CRD readiness
 
-That file references `catalog/platform/argocd/helm_release.yaml`, which contains
-`release` metadata and shared chart `values`. Its `valueFiles` list selects the
-separate `catalog/platform/argocd/azure-values.yaml` cloud profile; its `values`
-map contains cluster overrides. The wrapper passes the release metadata to the
-Helm module and uses `yamlencode` for both values maps. Helm receives shared
-values, cloud values-file contents, and cluster overrides in that order. No
-Kustomize rendering is required. The seed unit reads:
+Install Azure CLI, `kubelogin`, and `kubectl` on the runner. Authenticate Azure
+CLI as the deployment identity and grant that identity the required Kubernetes
+permissions. AKS AGIC disables local accounts. Both generated providers use
+`kubelogin get-token --login azurecli`, which emits the `ExecCredential` JSON
+required by Kubernetes clients. `az aks get-credentials` writes kubeconfig and
+is not an exec token command. The configured server ID is for managed AKS in
+Azure's public cloud. Helm provider v3 uses `kubernetes = { exec = { ... } }`;
+the Kubernetes provider uses an `exec` block.
 
-```text
-clusters/azure/DEV-JKS/dev/uks/sandbox/aks-agic/root_projects.yaml
-```
+Before root Application plan or apply, a hook runs `kubectl wait` for
+`applications.argoproj.io` to have condition `Established`, with a 120-second
+timeout. Its generated kubeconfig uses the same AKS endpoint, CA certificate,
+and `kubelogin` exec authentication as Terraform, rather than the current
+kubectl context. If the CRD is absent or AKS access fails, the hook stops before
+Terraform schema discovery and reports the Helm bootstrap command.
 
-It decodes this Kubernetes `List` into separate resource instances. The file owns
-the root path, Git revision, project permissions, sync policy, and other manifest
-settings. Terragrunt overrides only the configurable repository URL and its
-matching project permission. It does not render Kustomize or fetch Helm values
-through HTTP.
-
-### Checkout and authentication
-
-For an existing sibling checkout, run from the infrastructure repository root:
-
-```sh
-export GITOPS_REPO_URL=https://github.com/RyanJKS/platform-gitops.git
-export GITOPS_DIR="$(cd ../platform-gitops && pwd)"
-```
-
-For a new runner checkout, clone the configured URL into `GITOPS_DIR` and check
-out a reviewed commit before planning. For example, with Git credentials already
-configured:
-
-```sh
-export GITOPS_REPO_URL=https://github.com/RyanJKS/platform-gitops.git
-export GITOPS_DIR="$RUNNER_TEMP/platform-gitops"
-GITOPS_COMMIT=REPLACE_PLACEHOLDER
-git clone "$GITOPS_REPO_URL" "$GITOPS_DIR"
-git -C "$GITOPS_DIR" checkout --detach "$GITOPS_COMMIT"
-```
-
-Use the same checkout and commit for plan and apply. Publishing configuration to
-Git is required before Argo CD can reconcile the configured root revision.
-Blueprint module refs remain in `_envcommon/module-versions.hcl`; configuration
-checkout commits and blueprint refs are independent inputs.
-
-The generated provider files contain the authentication command directly. Helm
-provider v3 uses `kubernetes = { exec = { ... } }`; the Kubernetes provider uses an
-`exec` block. Both execute `kubelogin get-token --login azurecli`, which emits the
-`ExecCredential` JSON required by Kubernetes clients. `az aks get-credentials`
-writes kubeconfig and is not an exec token command.
-
-AKS AGIC disables local accounts. Both generated providers use `kubelogin
-get-token --login azurecli` rather than client certificate credentials. Install
-Azure CLI and `kubelogin` on the runner, authenticate Azure CLI to the deployment
-identity, and grant that identity the required Kubernetes permissions. The
-configured server ID is for managed AKS in Azure's public cloud.
-
-### Install before planning the seed
+### Install before planning the root Application
 
 Run these commands from the infrastructure repository root after AKS exists and
-the configuration checkout and Azure authentication are ready:
+Azure authentication is ready:
 
 ```sh
 AKS_AGIC_DIR=infrastructure/azure/live/DEV-JKS/dev/uks/sandbox/platform/aks-agic
-(cd "$AKS_AGIC_DIR/argocd_helm_manifest" && terragrunt run -- plan)
-(cd "$AKS_AGIC_DIR/argocd_helm_manifest" && terragrunt run -- apply)
-(cd "$AKS_AGIC_DIR/argocd_project_manifest" && terragrunt run -- plan)
-(cd "$AKS_AGIC_DIR/argocd_project_manifest" && terragrunt run -- apply)
+(cd "$AKS_AGIC_DIR/argocd_helm_manifest" && ARGOCD_BOOTSTRAP=true terragrunt run -- plan)
+(cd "$AKS_AGIC_DIR/argocd_helm_manifest" && ARGOCD_BOOTSTRAP=true terragrunt run -- apply)
+(cd "$AKS_AGIC_DIR/argocd_application_manifest" && terragrunt run -- plan)
+(cd "$AKS_AGIC_DIR/argocd_application_manifest" && terragrunt run -- apply)
 ```
 
-The seed unit depends on the Helm unit in the Terragrunt graph. CRDs must still
-exist before its Kubernetes provider can plan, so initial bootstrap needs these
-separate stages. The Helm release waits for readiness with a 600-second timeout.
-For subsequent plans, use real AKS outputs and a reachable API.
+An initial ordinary `run --all apply` excludes Helm, so it cannot create the
+Argo CD CRDs needed by the root Application. Install Helm explicitly first and
+then retry the Application unit or the ordinary run. The CRDs must exist before
+the Kubernetes provider can plan; do not plan all units on a fresh cluster
+before installation. Keep `ARGOCD_BOOTSTRAP` unset during routine operations
+after the Helm ownership handoff.
 
-A Terraform `moved` block preserves a previously managed root's resource address
-when changing from the single-manifest wrapper to the generated Application
-module. New seed projects receive their own stable resource keys. Inspect any
-existing installation's ownership before applying; this wiring does not migrate
-raw-manifest or Azure extension-owned Argo CD resources into Helm automatically.
-
-The current Azure single-unit workflow cannot select these nested AKS AGIC units.
-Use the explicit CLI stages above. A pipeline invoking them must add the GitOps
-checkout and `kubelogin` prerequisites; no workflow deployment is performed by
-this configuration change.
-
+Inspect any existing installation's ownership before applying. This wiring does
+not migrate raw-manifest or Azure extension-owned Argo CD resources into Helm
+automatically. The current Azure single-unit workflow cannot select nested AKS
+AGIC units. Use the explicit CLI stages above. A pipeline invoking them must
+provide the Azure authentication and command prerequisites; no workflow
+deployment is performed by this configuration change.
 
 ## Azure VNet address allocations
 

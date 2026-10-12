@@ -1,10 +1,23 @@
-# Terraform owns this Helm release; Argo CD does not sync its setup files.
+# Bootstrap only: Argo CD owns chart resources after the documented handoff.
 terraform {
-  source = "${include.root.locals.repo_urls.platform_blueprints_github_url}//terraform/shared/helm_release?ref=${urlencode(include.envcommon.locals.helm_release)}"
+  before_hook "bootstrap_only" {
+    commands = ["plan", "apply", "destroy", "import", "refresh"]
+    execute = [
+      "sh", "-c",
+      "if [ \"$1\" != true ]; then echo 'Argo CD Helm bootstrap is disabled. Use ARGOCD_BOOTSTRAP=true only for initial installation or reviewed recovery.' >&2; exit 1; fi",
+      "argocd-bootstrap", get_env("ARGOCD_BOOTSTRAP", "false")
+    ]
+  }
+  source = "${include.repo_urls.locals.platform_blueprints_github_url}//terraform/shared/helm_release?ref=${urlencode(include.envcommon.locals.helm_release)}"
 }
 
 include "root" {
   path   = find_in_parent_folders("root.hcl")
+  expose = true
+}
+
+include "repo_urls" {
+  path   = "${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/repo-urls.hcl"
   expose = true
 }
 
@@ -14,10 +27,7 @@ include "envcommon" {
 }
 
 locals {
-  gitops_dir   = abspath(get_env("GITOPS_DIR", "${get_repo_root()}/../platform-gitops"))
-  cluster_path = "clusters/azure/DEV-JKS/dev/uks/sandbox/aks-agic"
-  release      = yamldecode(file("${local.gitops_dir}/${local.cluster_path}/platform/argocd/helm_release.yaml"))
-  catalog      = yamldecode(file("${local.gitops_dir}/${local.release.catalog}"))
+  bootstrap_enabled = get_env("ARGOCD_BOOTSTRAP", "false") == "true"
 }
 
 dependency "aks" {
@@ -47,15 +57,22 @@ generate "helm_provider" {
   EOF
 }
 
+# Routine run --all operations exclude this bootstrap unit.
+exclude {
+  if      = !local.bootstrap_enabled
+  actions = ["all"]
+}
+
+# Minimal installation only. Runtime configuration belongs to the GitOps child.
 inputs = {
-  release = merge(local.catalog.release, {
+  release = {
+    name             = "argocd"
+    namespace        = "argocd"
+    repository       = "https://argoproj.github.io/argo-helm"
+    chart            = "argo-cd"
+    version          = "10.9.0"
     create_namespace = true
     wait             = true
     timeout          = 600
-  })
-  values = concat(
-    [yamlencode(local.catalog.values)],
-    [for values_file in local.release.valueFiles : file("${local.gitops_dir}/${values_file}")],
-    [yamlencode(local.release.values)]
-  )
+  }
 }
