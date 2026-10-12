@@ -2,6 +2,7 @@ locals {
   # Store raw Git refs; consuming units URL-encode them.
   aks_cluster           = "main"
   aks_extension_version = "main"
+  helm_release          = "dev/sandbox"
   kubernetes_manifest   = "main"
   dns_version           = "main"
   nsg                   = "main"

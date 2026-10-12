@@ -190,6 +190,98 @@ copy the unit files beside `unit.hcl`.
 
 ## First plan for the UKS platform
 
+To apply the sandbox platform units while excluding all AKS variants, run from
+`infrastructure/azure/live/DEV-JKS/dev/uks/sandbox/platform` after configuring
+the deployment prerequisites:
+
+```sh
+terragrunt run --all --filter '!./aks-*/**' -- apply
+```
+
+The filter paths are relative to this working directory. Direct platform units
+such as `container_registry` reference their sibling units with
+`../solution_settings` and `../resource_group`. Units nested beneath an AKS
+variant use `../../solution_settings` and `../../resource_group` instead. If
+Terragrunt reports a missing `sandbox/solution_settings/terragrunt.hcl` or
+`sandbox/resource_group/terragrunt.hcl`, check the failing unit's dependency
+paths; both units live under `sandbox/platform/`.
+
+The sandbox `container_registry` unit uses the module's default `Basic` SKU and
+sets `network_rule_set = null` to omit network rules. An empty object (`{}`) is
+not equivalent to `null`: the module fills in `default_action = "Deny"` and an
+empty IP allow list, which requires `Premium` and denies public access. To
+configure network rules, explicitly select `sku = "Premium"` and review the
+default action and IP allow list before applying.
+
+Within `sandbox/platform/aks-agic/rbacs`, the `aks_cluster` dependency points to
+`../cluster`, while `cluster_ad_groups` points to `../cluster_ad_groups`. Keep
+these paths distinct so each role assignment consumes outputs from the correct
+unit.
+
+The AGIC cluster reads its administrator group from
+`dependency.cluster_ad_groups.outputs.object_id["AKS-AGIC-ADMIN"]`. The group
+module exposes `object_id` as a map; it does not expose `object_ids`. Its
+Application Gateway dependency points to the sibling `../application_gateway`.
+The gateway does not attach the AGIC workload identity, so it can be planned
+before the cluster. The AGIC identity's federation then uses the cluster's OIDC
+issuer. Attaching that identity to the gateway would create a dependency cycle.
+If the gateway later needs Key Vault certificates, use a separate identity
+without a cluster dependency.
+
+The `cluster_identity_rbacs` unit grants the control-plane identity
+`Network Contributor` on the AKS node subnet and `Managed Identity Operator`
+on the kubelet identity resource. It depends only on the VNet and the two
+identities. The cluster declares an ordering dependency on this unit so these
+permissions exist before Azure creates AKS. The remaining `rbacs` assignments
+run after the cluster and workload identities exist. Keeping the prerequisite
+roles in that downstream unit prevents a fresh cluster from being created and
+causes `CustomKubeletIdentityMissingPermissionError`.
+
+When applying individual units, apply `cluster_identity_rbacs` before `cluster`.
+If AKS still reports a missing permission after the role assignment succeeds,
+allow Azure RBAC propagation before retrying. A successful plan does not prove
+that Azure has activated the permissions required by cluster creation.
+
+For an existing deployment that tracks these roles in the `rbacs` state, transfer
+the state ownership of `azurerm_role_assignment.this["controlplane_subnet"]` and
+`azurerm_role_assignment.this["controlplane_kubelet"]` to the new
+`cluster_identity_rbacs` state before applying this split. Preserve the existing
+Azure role assignment IDs and review both plans for unintended role deletion or
+duplicate creation. This migration is not needed when the old unit has no state.
+
+The gateway also declares an ordering dependency on `../agwsnet_nsg`. During a
+Terragrunt run across all units, this waits for both the subnet association and
+all NSG rules to finish before creating the gateway. Application Gateway v2
+requires inbound TCP ports `65200-65535` from the `GatewayManager` service tag;
+the allow rule has priority `120`, ahead of the catch-all deny at `200`. Creating
+the gateway while these rules are still being applied can fail with
+`ApplicationGatewaySubnetInboundTrafficBlockedByNetworkSecurityGroup` even
+when the final NSG configuration is correct. After the NSG apply succeeds,
+retry the gateway apply. When applying individual units, apply `agwsnet_nsg`
+before `application_gateway`; the ordering dependency is used by runs across
+all units.
+
+The gateway bootstrap uses `add_public_ip = true` and a flat port map,
+`frontend_ports = { bootstrap-http = 80 }`. The cluster sets
+`key_management_service = null` until a Key Vault key is configured. An empty
+object does not supply the required `key_vault_key_id`.
+
+To plan the AGIC units, run from
+`infrastructure/azure/live/DEV-JKS/dev/uks/sandbox/platform/aks-agic` after
+configuring cloud credentials and remote state access:
+
+```sh
+terragrunt run --all -- plan -input=false
+```
+
+AGIC dependencies use the shared mock outputs for validation and planning when
+real outputs are unavailable. The fixtures include managed identity IDs and
+principals, the group module's `object_id` map, the gateway, registry, Log
+Analytics workspace, OIDC issuer, and `agwsnet-001` subnet. The AKS fixture also
+includes the control-plane identity consumed by app-routing RBAC. These fixtures
+do not create upstream resources or make a saved plan suitable for applying; create a
+fresh downstream plan after the upstream resources have real state outputs.
+
 The sandbox AKS unit is at `sandbox/platform/aks-app-routing/cluster` beneath
 `infrastructure/azure/live/DEV-JKS/dev/uks`. The sandbox platform RBAC unit
 references it through `../aks-app-routing/cluster`; `sandbox/platform/aks_cluster`
@@ -239,7 +331,7 @@ Terragrunt reads real outputs when available. See the Terragrunt references for
 [reading shared configuration](https://terragrunt.gruntwork.io/docs/reference/hcl/functions/#read_terragrunt_config)
 and [dependency mocks and merge strategies](https://terragrunt.gruntwork.io/docs/reference/hcl/blocks/#dependency).
 
-The `argocd_project_manifest` units use Terraform's `kubernetes_manifest`
+The project and application manifest units use Terraform's `kubernetes_manifest`
 resource. Its provider queries the live Kubernetes API during planning to discover
 resource schemas, including Argo CD custom resources. Mock AKS outputs cannot
 replace that API: the mock host `https://example.invalid` deliberately does not
@@ -249,7 +341,7 @@ From `infrastructure/azure/live/DEV-JKS/dev/uks`, after configuring the deployme
 prerequisites, exclude these units from the first infrastructure plan:
 
 ```sh
-terragrunt run --all --filter '!**/argocd_project_manifest' plan
+terragrunt run --all --filter '!**/argocd_*_manifest' plan
 ```
 
 The filter excludes both domain manifest units and keeps AKS and its Argo CD
@@ -270,6 +362,129 @@ before applying it. Do not apply a saved plan containing mock values.
 
 An NSG skipped because its VNet failed is a downstream consequence. Fix the VNet
 error first, including any missing address allocation described below.
+
+
+## Shared Azure repository URLs
+
+`infrastructure/azure/_envcommon/repo-urls.hcl` holds repository locations:
+
+```hcl
+locals {
+  platform_blueprints_github_url = "git@github.com:RyanJKS/platform-blueprints.git"
+  platform_gitops_github_url     = "https://github.com/RyanJKS/platform-gitops.git"
+}
+```
+
+The GitOps repository is public. Use HTTPS for the URL Argo CD receives so the
+repo-server can fetch it without SSH credentials. Terraform's SSH authentication
+for module downloads is separate from Argo CD repository authentication. After
+changing this URL, plan and apply `argocd_application_manifest` to update the live
+root Application.
+
+Azure units expose this shared file directly, alongside the root include and
+the `envcommon` include for module versions. Each shared file needs its own include
+label, as with the VNet's `network_addresses` include:
+
+```hcl
+include "repo_urls" {
+  path   = "${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/repo-urls.hcl"
+  expose = true
+}
+
+terraform {
+  source = "${include.repo_urls.locals.platform_blueprints_github_url}//terraform/shared/helm_release?ref=${urlencode(include.envcommon.locals.helm_release)}"
+}
+```
+
+Read repository locations through `include.repo_urls.locals`, not through root
+locals. The Azure root reads the same file directly for catalog discovery only;
+it does not expose repository URLs to units. Keep repository locations here and
+version pins in the existing version configuration.
+
+## AKS AGIC Argo CD bootstrap
+
+The sandbox uses two units under
+`infrastructure/azure/live/DEV-JKS/dev/uks/sandbox/platform/aks-agic/`:
+
+1. `argocd_helm_manifest` installs the minimal official `argo-cd` chart. The
+   release name and namespace are `argocd`; the repository and chart version
+   `10.9.0` are hardcoded in the unit. It uses chart defaults, creates the
+   namespace, waits for readiness, and has a 600-second timeout. It reads no
+   GitOps runtime values.
+2. `argocd_application_manifest` defines `all-apps` inline using the built-in
+   `default` AppProject, branch `dev/sandbox`, and path
+   `clusters/azure/DEV-JKS/dev/uks/sandbox/aks-agic`. Automatic self-heal is
+   enabled, pruning is disabled, and no separate root Application YAML is read.
+   The unit uses the shared single-resource `kubernetes_manifest` module.
+
+The Application unit depends on Helm for Terragrunt ordering. The Helm unit is
+excluded from ordinary `run --all` operations and its direct
+plan/apply/destroy/import/refresh commands are guarded. Set
+`ARGOCD_BOOTSTRAP=true` only for installation or reviewed recovery. Keep it unset
+after the intended self-management child adopts the installation. Terraform
+continues owning the root Application, while runtime chart configuration lives
+in GitOps. Publish the cluster overlay before syncing the root.
+
+Repository URLs come from `infrastructure/azure/_envcommon/repo-urls.hcl`.
+`platform_blueprints_github_url` selects module sources;
+`platform_gitops_github_url` sets the root Application's Git URL. No local GitOps
+checkout, `GITOPS_DIR`, or `GITOPS_REF` is required by these units. Blueprint module
+refs remain in `_envcommon/module-versions.hcl`; the root Application tracks
+`dev/sandbox`. Configure Argo CD repository credentials if the GitOps repository
+is private.
+
+Follow the GitOps `docs/bootstrap.md` Helm ownership handoff before enabling
+self-management: remove `helm_release.this` from Terraform state without
+destroying the live release, then enable the child Application. Do not use
+Terraform destroy to relinquish ownership. If an earlier seed or project unit
+was applied, review its existing state and ownership before changing units.
+Terraform moved blocks cannot transfer resources between different state files.
+This change does not modify existing state or delete an existing AppProject.
+
+### AKS authentication and CRD readiness
+
+Install Azure CLI, `kubelogin`, and `kubectl` on the runner. Authenticate Azure
+CLI as the deployment identity and grant that identity the required Kubernetes
+permissions. AKS AGIC disables local accounts. Both generated providers use
+`kubelogin get-token --login azurecli`, which emits the `ExecCredential` JSON
+required by Kubernetes clients. `az aks get-credentials` writes kubeconfig and
+is not an exec token command. The configured server ID is for managed AKS in
+Azure's public cloud. Helm provider v3 uses `kubernetes = { exec = { ... } }`;
+the Kubernetes provider uses an `exec` block.
+
+Before root Application plan or apply, a hook runs `kubectl wait` for
+`applications.argoproj.io` to have condition `Established`, with a 120-second
+timeout. Its generated kubeconfig uses the same AKS endpoint, CA certificate,
+and `kubelogin` exec authentication as Terraform, rather than the current
+kubectl context. If the CRD is absent or AKS access fails, the hook stops before
+Terraform schema discovery and reports the Helm bootstrap command.
+
+### Install before planning the root Application
+
+Run these commands from the infrastructure repository root after AKS exists and
+Azure authentication is ready:
+
+```sh
+AKS_AGIC_DIR=infrastructure/azure/live/DEV-JKS/dev/uks/sandbox/platform/aks-agic
+(cd "$AKS_AGIC_DIR/argocd_helm_manifest" && ARGOCD_BOOTSTRAP=true terragrunt run -- plan)
+(cd "$AKS_AGIC_DIR/argocd_helm_manifest" && ARGOCD_BOOTSTRAP=true terragrunt run -- apply)
+(cd "$AKS_AGIC_DIR/argocd_application_manifest" && terragrunt run -- plan)
+(cd "$AKS_AGIC_DIR/argocd_application_manifest" && terragrunt run -- apply)
+```
+
+An initial ordinary `run --all apply` excludes Helm, so it cannot create the
+Argo CD CRDs needed by the root Application. Install Helm explicitly first and
+then retry the Application unit or the ordinary run. The CRDs must exist before
+the Kubernetes provider can plan; do not plan all units on a fresh cluster
+before installation. Keep `ARGOCD_BOOTSTRAP` unset during routine operations
+after the Helm ownership handoff.
+
+Inspect any existing installation's ownership before applying. This wiring does
+not migrate raw-manifest or Azure extension-owned Argo CD resources into Helm
+automatically. The current Azure single-unit workflow cannot select nested AKS
+AGIC units. Use the explicit CLI stages above. A pipeline invoking them must
+provide the Azure authentication and command prerequisites; no workflow
+deployment is performed by this configuration change.
 
 ## Azure VNet address allocations
 

@@ -42,7 +42,7 @@ locals {
 
 catalog {
   urls = [
-    "github.com/RyanJKS/platform-blueprints//terraform/azure",
+    "${read_terragrunt_config("${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/repo-urls.hcl").locals.platform_blueprints_github_url}//terraform/azure",
     # Local catalogs require the Git root; .terragrunt-catalog-ignore scopes discovery.
     get_repo_root(),
   ]

@@ -34,10 +34,14 @@ locals {
 
   aks_cluster = {
     id                     = "${local.resource_group_id}/providers/Microsoft.ContainerService/managedClusters/mock-aks"
+    oidc_issuer_url        = "https://example.invalid/oidc"
     host                   = "https://example.invalid"
     cluster_ca_certificate = ""
     client_certificate     = ""
     client_key             = ""
+    identity = [{
+      principal_id = local.zero_uuid
+    }]
     web_app_routing_identity = [{
       object_id = local.zero_uuid
     }]
@@ -47,10 +51,35 @@ locals {
     id = "${local.resource_group_id}/providers/Microsoft.Network/dnsZones/example.invalid"
   }
 
+  log_analytics = {
+    id = "${local.resource_group_id}/providers/Microsoft.OperationalInsights/workspaces/mock-log-analytics"
+  }
+
+  application_gateway = {
+    id = "${local.resource_group_id}/providers/Microsoft.Network/applicationGateways/mock-application-gateway"
+  }
+
+  container_registry = {
+    id = "${local.resource_group_id}/providers/Microsoft.ContainerRegistry/registries/mockacr"
+  }
+
+  managed_identity = {
+    id           = "${local.resource_group_id}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/mock-identity"
+    client_id    = local.zero_uuid
+    principal_id = local.zero_uuid
+  }
+
+  cluster_ad_groups = {
+    object_id = {
+      AKS-AGIC-ADMIN = local.zero_uuid
+    }
+  }
+
   vnet = {
     subnet_ids = {
       aksnet-001  = "${local.resource_group_id}/providers/Microsoft.Network/virtualNetworks/mock-vnet/subnets/aksnet-001"
       appsnet-001 = "${local.resource_group_id}/providers/Microsoft.Network/virtualNetworks/mock-vnet/subnets/appsnet-001"
+      agwsnet-001 = "${local.resource_group_id}/providers/Microsoft.Network/virtualNetworks/mock-vnet/subnets/agwsnet-001"
     }
   }
 
