@@ -69,7 +69,7 @@ jobs:
       apply_environment: ${{ steps.target.outputs.apply_environment }}
       terraform_version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Require the default branch
@@ -125,7 +125,7 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       EXPECTED_STATE_KEY: ${{ needs.validate.outputs.state_key }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: ./.github/actions/azure-terragrunt
@@ -173,7 +173,7 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       EXPECTED_STATE_KEY: ${{ needs.validate.outputs.state_key }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: ./.github/actions/azure-terragrunt
