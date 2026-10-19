@@ -528,9 +528,9 @@ validate overlaps or change existing address ranges.
 ### Azure module refs
 
 `infrastructure/azure/_envcommon/module-versions.hcl` contains a single `locals`
-block with Git refs named `aks_cluster`, `nsg`, `rbac`, `resource_group`,
-`solution_settings`, and `vnet`. Each consuming unit includes this file directly,
-alongside its root include:
+block with Git refs for every remote Terraform module consumed by Azure units,
+including the shared Helm release and Kubernetes manifest modules. Each consuming
+unit includes this file directly, alongside its root include:
 
 ```hcl
 include "envcommon" {
@@ -546,10 +546,11 @@ there is no automatic environment override or merge layer. Shared files contain
 locals only and do not include other files. A unit needing multiple shared files
 uses a distinct include label for each file.
 
-Current refs preserve the existing `feature/azure-terraform-modules` branch;
-centralisation does not make these refs immutable. Local modules continue using
-their checkout paths. To upgrade a module, replace its shared ref with a verified
-immutable release tag or full commit SHA, review the module interface, and test
+All remote module refs are set to `v0.1.0` except `aks_cluster`, which tracks
+`feat/sandbox`. The cluster branch can change without an edit to this repository.
+Local modules continue using their checkout paths. To upgrade a module, replace
+its shared ref with a verified immutable release tag or full commit SHA, review
+the module interface, and test
 plans for affected units. A shared ref change affects every unit consuming that
 local. For a staged rollout, add a separate candidate local and explicitly select
 it in the units being tested before promoting the shared ref. This file does not
