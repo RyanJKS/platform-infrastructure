@@ -32,7 +32,7 @@ include "envcommon" {
 }
 
 locals {
-  cluster_path = "clusters/azure/${include.root.locals.subscription_name}/${include.root.locals.environment}/${include.root.locals.region_short}/${include.root.locals.domain_name}/aks-agic"
+  cluster_path = "clusters/azure/${include.root.locals.subscription_name}/${include.root.locals.environment}/${include.root.locals.region_short}/${include.root.locals.domain_name}/aks-envoy"
 }
 
 dependencies {
@@ -110,7 +110,7 @@ inputs = {
       project = "default"
       source = {
         repoURL        = "https://github.com/RyanJKS/platform-gitops.git"
-        targetRevision = "dev/sandbox"
+        targetRevision = "feat/sandbox"
         path           = local.cluster_path
       }
       destination = {

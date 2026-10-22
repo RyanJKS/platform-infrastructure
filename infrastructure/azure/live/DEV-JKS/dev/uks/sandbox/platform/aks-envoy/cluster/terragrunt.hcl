@@ -96,6 +96,10 @@ dependency "cluster_ad_groups" {
   mock_outputs_merge_strategy_with_state  = "deep_map_only"
 }
 
+dependency "key_vault" {
+  config_path = "../../keyvault"
+}
+
 locals {
   name_prefix = "envoy"
 
@@ -165,8 +169,8 @@ inputs = {
   # Type: object
   default_node_pool = {
     vm_size              = "Standard_D2_v5"
-    auto_scaling_enabled = true
-    min_count            = 3
+    auto_scaling_enabled = true # cluster will auto scale nodes based on demands
+    min_count            = 1
     max_count            = 5
     max_pods             = 30
     vnet_subnet_id       = dependency.vnet.outputs.subnet_ids["aksnet-001"]
@@ -178,9 +182,16 @@ inputs = {
 
   # Description: ACI virtual nodes for Linux containers using an existing subnet name. Null disables the addon.
   # Type: set
+
+  # TOBE USED if we want virutal nodes and kubelet
+  # V2 is out and needs to be installed using extension_add_on module: https://learn.microsoft.com/en-us/azure/aks/virtual-nodes-v2
+  # if this is used, requires to add rbac on the uami created onto that subnet
   aci_connector_linux = {
     subnet_name = dependency.vnet.outputs.subnet_ids["acisnet-001"]
   }
+
+  # To add SSH keys and windows password
+  key_vault_id = dependency.key_vault.outputs.id
 
   # Description: Microsoft Entra group object IDs for cluster administrators.
   # Type: set

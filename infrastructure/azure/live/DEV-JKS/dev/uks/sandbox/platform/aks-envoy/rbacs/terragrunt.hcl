@@ -150,6 +150,13 @@ inputs = {
       type                 = "ServicePrincipal"
       role_definition_name = "DNS Zone Contributor"
     },
+    # required if using enable_virtual_node, which provisions "serverless azure container instances" compute to run workloads
+    aci_uami_network = {
+      scope                = dependency.vnet.outputs.subnet_ids["acisnet-001"]
+      principal_id         = dependency.aks_cluster.outputs.connector_identity.object_id
+      type                 = "ServicePrincipal"
+      role_definition_name = "Network Contributor"
+    }
   }
 
 
