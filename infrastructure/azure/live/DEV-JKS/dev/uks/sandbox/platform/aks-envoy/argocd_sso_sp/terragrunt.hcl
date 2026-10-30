@@ -79,4 +79,6 @@ inputs = {
   # Type: string
   key_vault_id = dependency.key_vault.outputs.id
 
+  # Type: string
+  secret_name_prefix = "argocd"
 }

@@ -244,7 +244,10 @@ inputs = {
 
   # Description: AKS networking configuration. The default preserves Azure CNI overlay networking.
   # Type: object
-  network_profile = { "network_plugin" : "azure", "network_plugin_mode" : "overlay" }
+  network_profile = { "network_plugin" : "none" } # BYO CILIUM IMPLEMENTATION
+
+  # Type: boolean
+  kube_proxy_disabled = true
 
   # Description: Application Gateway ingress using an existing gateway. Null disables the addon.
   # Type: object

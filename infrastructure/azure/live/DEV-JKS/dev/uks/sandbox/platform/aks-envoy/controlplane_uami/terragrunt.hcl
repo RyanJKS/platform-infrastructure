@@ -37,6 +37,10 @@ dependency "resource_group" {
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
+dependency "key_vault" {
+  config_path = "../../keyvault"
+}
+
 locals {
   name_prefix = "controlplane"
 }
@@ -76,4 +80,10 @@ inputs = {
   # Type: map
   tags = dependency.solution_settings.outputs.tags
 
+  # Description: The resource ID of an existing Azure Key Vault. Required when create_secret is true.
+  # Type: string
+  key_vault_id = dependency.key_vault.outputs.id
+
+  # Type: string
+  secret_name_prefix = "controlplane"
 }
