@@ -2,7 +2,7 @@ locals {
   # Store raw Git refs; consuming units URL-encode them.
   ad_group              = "v0.1.0"
   aks_cluster           = "feat/sandbox"
-  aks_extension_version = "v0.1.0"
+  aks_extension_version = "feat/sandbox"
   application_gateway   = "v0.1.0"
   container_registry    = "v0.1.0"
   dns_version           = "v0.1.0"

@@ -37,10 +37,6 @@ dependency "dns" {
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
-dependency "vnet" {
-  config_path = "../../vnet"
-}
-
 dependency "aks_cluster" {
   config_path = "../cluster"
 
@@ -104,10 +100,6 @@ dependency "kubelet_uami" {
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
-dependency "aks_cluster" {
-  config_path = "../cluster"
-}
-
 inputs = {
   # --------------------------------------------------------------------------------------------------------------------
   # Required input variables
@@ -119,7 +111,7 @@ inputs = {
     # # Grants the admin group full Kubernetes API access across the cluster
     aks_cluster_admin = {
       scope                = dependency.aks_cluster.outputs.id
-      principal_id         = dependency.cluster_ad_groups.outputs.object_id["AKS-AGIC-ADMIN"]
+      principal_id         = dependency.cluster_ad_groups.outputs.object_id["AKS-ENVOY-ADMIN"]
       type                 = "Group"
       role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
     },
@@ -149,13 +141,6 @@ inputs = {
       principal_id         = dependency.certmanager_uami.outputs.principal_id
       type                 = "ServicePrincipal"
       role_definition_name = "DNS Zone Contributor"
-    },
-    # required if using enable_virtual_node, which provisions "serverless azure container instances" compute to run workloads
-    aci_uami_network = {
-      scope                = dependency.vnet.outputs.subnet_ids["acisnet-001"]
-      principal_id         = dependency.aks_cluster.outputs.connector_identity.object_id
-      type                 = "ServicePrincipal"
-      role_definition_name = "Network Contributor"
     }
   }
 

@@ -180,15 +180,8 @@ inputs = {
   # Type: set
   identity_ids = [dependency.controlplane_uami.outputs.id]
 
-  # Description: ACI virtual nodes for Linux containers using an existing subnet name. Null disables the addon.
-  # Type: set
-
-  # TOBE USED if we want virutal nodes and kubelet
-  # V2 is out and needs to be installed using extension_add_on module: https://learn.microsoft.com/en-us/azure/aks/virtual-nodes-v2
-  # if this is used, requires to add rbac on the uami created onto that subnet
-  aci_connector_linux = {
-    subnet_name = dependency.vnet.outputs.subnet_ids["acisnet-001"]
-  }
+  # Virtual Nodes is disabled. See README.md for the future v2 extension and prerequisites.
+  aci_connector_linux = null
 
   # To add SSH keys and windows password
   key_vault_id = dependency.key_vault.outputs.id
