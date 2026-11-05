@@ -123,7 +123,7 @@ inputs = {
 
     # enable azure container instance
     acisnet-001 = {
-      address_prefixes = ["10.3.0.0/24"]
+      address_prefixes = ["10.2.7.0/24"]
 
       delegation = {
         name = "aci-delegation"
