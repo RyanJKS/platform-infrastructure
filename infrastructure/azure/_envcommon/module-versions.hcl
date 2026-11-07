@@ -4,7 +4,7 @@ locals {
   aks_cluster           = "feat/sandbox"
   aks_extension_version = "feat/sandbox"
   application_gateway   = "v0.1.0"
-  container_registry    = "v0.1.0"
+  container_registry    = "feat/sandbox"
   dns_version           = "v0.1.0"
   helm_release          = "v0.1.0"
   keyvault              = "feat/sandbox"

@@ -46,13 +46,9 @@ inputs = {
   # Uncomment the ones you wish to set
   # --------------------------------------------------------------------------------------------------------------------
 
-  # Description: Optional resource name override. Defaults to settings.name_prefix followed by akv.
+  # Description: Optional resource name override. Defaults to settings.name_prefix followed by kv.
   # Type: string
   # name = null
-
-  # Description: Optional Azure region override. Defaults to settings.region_long.
-  # Type: string
-  # location = null
 
   # Description: Tags to assign to the resource.
   # Type: map
@@ -72,7 +68,7 @@ inputs = {
 
   # Description: Whether to enable irreversible purge protection.
   # Type: bool
-  # purge_protection_enabled = true
+  purge_protection_enabled = false
 
   # Description: Whether to allow access through the public endpoint.
   # Type: bool
