@@ -82,6 +82,15 @@ dependency "certmanager_uami" {
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
+dependency "controlplane_uami" {
+  config_path = "../controlplane_uami"
+
+  mock_outputs = include.root.locals.mocks.managed_identity
+
+  mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
+  mock_outputs_merge_strategy_with_state  = "shallow"
+}
+
 dependency "externaldns_uami" {
   config_path = "../externaldns_uami"
 
@@ -98,6 +107,13 @@ dependency "kubelet_uami" {
 
   mock_outputs_allowed_terraform_commands = include.root.locals.mocks.allowed_commands
   mock_outputs_merge_strategy_with_state  = "shallow"
+}
+
+dependency "argocd_sso_sp" {
+  config_path = "../argocd_sso_sp"
+}
+dependency "keyvault" {
+  config_path = "../../keyvault"
 }
 
 inputs = {
@@ -141,6 +157,12 @@ inputs = {
       principal_id         = dependency.certmanager_uami.outputs.principal_id
       type                 = "ServicePrincipal"
       role_definition_name = "DNS Zone Contributor"
+    },
+    eso_access = {
+      scope                = dependency.keyvault.outputs.id
+      principal_id         = dependency.argocd_sso_sp.outputs.object_id
+      type                 = "ServicePrincipal"
+      role_definition_name = "Key Vault Secrets User"
     }
   }
 
