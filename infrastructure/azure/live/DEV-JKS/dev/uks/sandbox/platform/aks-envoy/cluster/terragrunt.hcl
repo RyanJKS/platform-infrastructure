@@ -224,7 +224,7 @@ inputs = {
 
   # Description: Application routing settings and Azure DNS zone IDs. Null disables the addon.
   # Type: object
-  web_app_routing = {}
+  web_app_routing = null
 
   # Description: Private cluster DNS prefix. Use instead of dns_prefix with a private cluster and a custom private DNS zone.
   # Type: string
@@ -251,7 +251,7 @@ inputs = {
 
   # Description: Application Gateway ingress using an existing gateway. Null disables the addon.
   # Type: object
-  ingress_application_gateway = {}
+  ingress_application_gateway = null
 
   # Description: Kubernetes secret encryption with an existing Key Vault key. Null disables KMS. Key permissions and private connectivity are caller-managed.
   # Type: object

@@ -151,7 +151,7 @@ inputs = {
       type                 = "ServicePrincipal"
       role_definition_name = "Reader"
     },
-    # Creates _acme-challenge TXT records for certificate validation. Not needed currently because of HTTP-01 but later for Azure DNS DNS-0
+    # Creates _acme-challenge TXT records for certificate validation.
     certmanager_uami = {
       scope                = dependency.dns.outputs.id
       principal_id         = dependency.certmanager_uami.outputs.principal_id
