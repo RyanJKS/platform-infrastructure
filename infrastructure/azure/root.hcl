@@ -1,4 +1,4 @@
-terragrunt_version_constraint = "= 1.1.5"
+terragrunt_version_constraint = ">= 1.1.5"
 
 locals {
   mocks = read_terragrunt_config("${dirname(find_in_parent_folders("root.hcl"))}/_mocks/outputs.hcl").locals
