@@ -71,7 +71,8 @@ locals {
 
   cluster_ad_groups = {
     object_id = {
-      AKS-AGIC-ADMIN = local.zero_uuid
+      AKS-AGIC-ADMIN  = local.zero_uuid
+      AKS-ENVOY-ADMIN = local.zero_uuid
     }
   }
 
